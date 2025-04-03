@@ -315,3 +315,20 @@ export const restoreBackup = async (req, res) => {
     return errorResponse(res, 'Error restoring database backup', 500, error);
   }
 };
+
+export const getQueuedWorkflows = async (req, res) => {
+  try {
+    console.log('Fetching queued workflows...');
+    const queuedWorkflows = await WorkflowRun.find({
+      'run.status': { $in: ['queued', 'waiting', 'pending'] },
+      'run.conclusion': null
+    }).sort({ 'run.created_at': -1 });
+    
+    console.log(`Found ${queuedWorkflows.length} queued workflows`);
+    
+    return successResponse(res, queuedWorkflows);
+  } catch (error) {
+    console.error('Error fetching queued workflows:', error);
+    return errorResponse(res, 'Error fetching queued workflows', 500, error);
+  }
+};

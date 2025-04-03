@@ -3,21 +3,14 @@ import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-d
 import {
   Box,
   Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
+  Grid2,
   Button,
   Chip,
   CircularProgress,
-  Divider,
   IconButton,
   Tooltip,
   Paper,
-  Collapse,
   Stack,
-  Link,
-  SvgIcon,
   TextField,
   InputAdornment,
   Select,
@@ -29,11 +22,6 @@ import {
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
-  ExpandMore as ExpandMoreIcon,
-  History as HistoryIcon,
-  Schedule as ScheduleIcon,
-  GitHub as GitHubIcon,
-  RocketLaunch as RocketLaunchIcon,
   Book as BookIcon,
   Search as SearchIcon,
   Close as CloseIcon,
@@ -41,10 +29,10 @@ import {
   PendingActions as PendingIcon,
 } from '@mui/icons-material';
 import apiService from '../../api/apiService';
-import { setupSocketListeners } from '../../api/socketService';
-import StatusChip from '../../common/components/StatusChip';
+import { setupSocketListeners, socket, defaultAlertConfig } from '../../api/socketService';
 import { formatDuration, formatDate } from '../../common/utils/statusHelpers';
 import { keyframes } from '@emotion/react';
+import { ToastContainer } from 'react-toastify';
 
 const rotate = keyframes`
   from {
@@ -60,6 +48,34 @@ const pulse = keyframes`
   50% { opacity: 1; }
   100% { opacity: 0.7; }
 `;
+
+// Alert icon component for long-queued workflows
+const AlertIcon = ({ queuedMinutes }) => (
+  <Tooltip
+    title={`Workflow has been queued for ${queuedMinutes} minutes`}
+    arrow
+    placement="top"
+  >
+    <Box
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '20px',
+        height: '20px',
+        borderRadius: '50%',
+        bgcolor: 'rgba(245, 166, 35, 0.2)',
+        color: '#F5A623',
+        animation: `${pulse} 1.5s ease-in-out infinite`,
+        ml: 1,
+        '&::before': {
+          content: '"⚠️"',
+          fontSize: '12px',
+        }
+      }}
+    />
+  </Tooltip>
+);
 
 const BuildHistoryBadge = ({ run }) => {
   const getColor = () => {
@@ -214,7 +230,6 @@ const Dashboard = () => {
   const [workflowRuns, setWorkflowRuns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedWorkflows, setExpandedWorkflows] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState(() => {
     const saved = localStorage.getItem('dashboardSearchQuery');
     return saved || '';
@@ -228,6 +243,13 @@ const Dashboard = () => {
   });
   const [buildMetrics, setBuildMetrics] = useState({});
   const [statusFilter, setStatusFilter] = useState('all');
+  const [alertConfig, setAlertConfig] = useState(() => {
+    const savedConfig = localStorage.getItem('alertConfig');
+    return savedConfig ? JSON.parse(savedConfig) : defaultAlertConfig;
+  });
+  
+  // Track long-queued workflows
+  const [longQueuedWorkflows, setLongQueuedWorkflows] = useState({});
 
   const pageSizeOptions = [30, 50, 100];
   const navigate = useNavigate();
@@ -412,18 +434,6 @@ const Dashboard = () => {
     totalRepos: pagination.total
   }), [groupedWorkflows, pagination]);
 
-  const toggleWorkflowHistory = (workflowKey) => {
-    setExpandedWorkflows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(workflowKey)) {
-        newSet.delete(workflowKey);
-      } else {
-        newSet.add(workflowKey);
-      }
-      return newSet;
-    });
-  };
-
   const handleClearSearch = () => {
     setSearchQuery('');
     localStorage.removeItem('dashboardSearchQuery');
@@ -512,11 +522,45 @@ const Dashboard = () => {
             return workflow;
           });
         });
-      }
+      },
+      onLongQueuedWorkflow: (data) => {
+        console.log('Dashboard received long-queued-workflow event:', data);
+        
+        // Store the long-queued workflow information for alert display
+        setLongQueuedWorkflows(prev => ({
+          ...prev,
+          [data.id]: {
+            workflow: data.workflow,
+            repository: data.repository,
+            queuedMinutes: data.queuedMinutes
+          }
+        }));
+      },
+      alertConfig: alertConfig // Pass the alert configuration to socket service
+    });
+
+    // Direct listener for long-queued events as a fallback
+    socket.on('long-queued-workflow', (data) => {
+      console.log('Direct socket listener received long-queued-workflow:', data);
+      
+      // Store the long-queued workflow information for alert display
+      setLongQueuedWorkflows(prev => ({
+        ...prev,
+        [data.id]: {
+          workflow: data.workflow,
+          repository: data.repository,
+          queuedMinutes: data.queuedMinutes
+        }
+      }));
     });
 
     return () => cleanupListeners();
-  }, [pagination.page, pagination.pageSize]);
+  }, [pagination.page, pagination.pageSize, alertConfig]);
+
+  // Save alert config when it changes
+  useEffect(() => {
+    localStorage.setItem('alertConfig', JSON.stringify(alertConfig));
+  }, [alertConfig]);
 
   if (loading) {
     return (
@@ -544,6 +588,18 @@ const Dashboard = () => {
 
   return (
     <Box sx={{ pb: 6 }}>
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+      
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -824,7 +880,7 @@ const Dashboard = () => {
 
                         {/* Workflows */}
                         <Box sx={{ p: 2.5 }}>
-                          <Grid 
+                          <Grid2 
                             container 
                             spacing={2}
                             columns={{ xs: 4, sm: 8, md: 12, lg: 16, xl: 40 }}
@@ -877,58 +933,32 @@ const Dashboard = () => {
                                       whiteSpace: 'nowrap',
                                       flex: 1,
                                       minWidth: 0,
+                                      display: 'flex',
+                                      alignItems: 'center',
                                       '&:hover': {
                                         color: '#58A6FF',
                                       }
                                     }}
                                   >
                                     {workflowKey}
+                                    {/* Show alert icon for any workflow run in this workflow that's in the longQueuedWorkflows */}
+                                    {workflowData.runs.some(workflow => 
+                                      longQueuedWorkflows[workflow.run.id] && 
+                                      workflow.workflow.name === workflowKey
+                                    ) && (
+                                      <AlertIcon 
+                                        queuedMinutes={
+                                          workflowData.runs
+                                            .filter(workflow => 
+                                              longQueuedWorkflows[workflow.run.id] && 
+                                              workflow.workflow.name === workflowKey
+                                            )
+                                            .map(workflow => longQueuedWorkflows[workflow.run.id].queuedMinutes)
+                                            .reduce((max, minutes) => Math.max(max, minutes), 0)
+                                        } 
+                                      />
+                                    )}
                                   </Typography>
-
-                                  <Stack 
-                                    direction="row" 
-                                    spacing={2} 
-                                    sx={{ 
-                                      ml: 2,
-                                      alignItems: 'center'
-                                    }}
-                                  >
-                                    <Tooltip title="Total builds">
-                                      <Box sx={{ 
-                                        display: 'flex', 
-                                        alignItems: 'center',
-                                        color: '#8B949E',
-                                        fontSize: '0.75rem',
-                                        '& svg': { fontSize: '0.875rem', mr: 0.5 }
-                                      }}>
-                                        <RocketLaunchIcon />
-                                        {workflowData.runs.length}
-                                      </Box>
-                                    </Tooltip>
-
-                                    <Tooltip title="Average duration">
-                                      <Box sx={{ 
-                                        display: 'flex', 
-                                        alignItems: 'center',
-                                        color: '#8B949E',
-                                        fontSize: '0.75rem',
-                                        '& svg': { fontSize: '0.875rem', mr: 0.5 }
-                                      }}>
-                                        <ScheduleIcon />
-                                        {(() => {
-                                          const completedRuns = workflowData.runs.filter(w => w.run.status === 'completed');
-                                          if (completedRuns.length === 0) return '-';
-                                          const totalDuration = completedRuns.reduce((acc, w) => {
-                                            const start = new Date(w.run.created_at);
-                                            const end = new Date(w.run.updated_at);
-                                            return acc + (end - start);
-                                          }, 0);
-                                          const avgDuration = totalDuration / completedRuns.length;
-                                          return formatDuration(new Date(), new Date(new Date().getTime() + avgDuration));
-                                        })()}
-                                      </Box>
-                                    </Tooltip>
-                                  </Stack>
                                 </Box>
                                 
                                 <Box sx={{ 
@@ -983,7 +1013,7 @@ const Dashboard = () => {
                                 </Box>
                               </Box>
                             ))}
-                          </Grid>
+                          </Grid2>
                         </Box>
                       </Paper>
                     ))}

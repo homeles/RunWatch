@@ -19,6 +19,15 @@ const setupSocket = (server) => {
     // Send a test event to verify connection
     socket.emit('connection_established', { message: 'Connected to server' });
     
+    // Handle long-queued workflow events from clients
+    socket.on('long-queued-workflow', (data) => {
+      console.log('Received long-queued-workflow event from client:', data);
+      
+      // Broadcast the event to all clients (including the sender)
+      io.emit('long-queued-workflow', data);
+      console.log('Broadcasted long-queued-workflow event to all clients');
+    });
+    
     socket.on('disconnect', () => {
       console.log('Client disconnected');
     });

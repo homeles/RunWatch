@@ -166,6 +166,17 @@ const apiService = {
     }
   },
   
+  // Get queued workflows
+  getQueuedWorkflows: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/workflow-runs/queued`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching queued workflows:', error);
+      throw error;
+    }
+  },
+  
   // Create database backup
   async createDatabaseBackup() {
     const response = await axios.get(`${API_URL}/database/backup`);

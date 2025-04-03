@@ -8,6 +8,7 @@ import {
   CircularProgress,
   List,
   ListItem,
+  FormHelperText,
   ListItemText,
   ListItemButton,
   Divider,
@@ -20,10 +21,9 @@ import {
   Chip,
   Card,
   CardContent,
-  FormHelperText,
-  Grid
+  Grid2
 } from '@mui/material';
-import { Sync as SyncIcon, ExpandMore as ExpandMoreIcon, Save as SaveIcon, Restore as RestoreIcon } from '@mui/icons-material';
+import { Sync as SyncIcon, Save as SaveIcon, Restore as RestoreIcon } from '@mui/icons-material';
 import apiService from '../../api/apiService';
 import { socket } from '../../api/socketService';
 import { formatDistanceToNow } from 'date-fns';
@@ -47,7 +47,7 @@ const Settings = () => {
   const [dbStatus, setDbStatus] = useState(null);
   const [restoreMessage, setRestoreMessage] = useState(null);
   const [restoreMessageType, setRestoreMessageType] = useState('success');
-
+  
   const fetchActiveSync = async () => {
     try {
       const response = await apiService.getActiveSync();
@@ -275,8 +275,8 @@ const Settings = () => {
         </Typography>
         {dbStatus ? (
           <>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}>
+            <Grid2 container spacing={2}>
+              <Grid2 item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 2 }}>
                     <Typography color="text.secondary" gutterBottom variant="body2">
@@ -289,8 +289,8 @@ const Settings = () => {
                     />
                   </CardContent>
                 </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              </Grid2>
+              <Grid2 item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 2 }}>
                     <Typography color="text.secondary" gutterBottom variant="body2">
@@ -301,8 +301,8 @@ const Settings = () => {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              </Grid2>
+              <Grid2 item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 2 }}>
                     <Typography color="text.secondary" gutterBottom variant="body2">
@@ -313,8 +313,8 @@ const Settings = () => {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              </Grid2>
+              <Grid2 item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 2 }}>
                     <Typography color="text.secondary" gutterBottom variant="body2">
@@ -325,8 +325,8 @@ const Settings = () => {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              </Grid2>
+              <Grid2 item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 2 }}>
                     <Typography color="text.secondary" gutterBottom variant="body2">
@@ -337,8 +337,8 @@ const Settings = () => {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              </Grid2>
+              <Grid2 item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 2 }}>
                     <Typography color="text.secondary" gutterBottom variant="body2">
@@ -349,8 +349,8 @@ const Settings = () => {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              </Grid2>
+              <Grid2 item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 2 }}>
                     <Typography color="text.secondary" gutterBottom variant="body2">
@@ -361,8 +361,8 @@ const Settings = () => {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              </Grid2>
+              <Grid2 item xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{ p: 2 }}>
                     <Typography color="text.secondary" gutterBottom variant="body2">
@@ -374,8 +374,8 @@ const Settings = () => {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
-            </Grid>
+              </Grid2>
+            </Grid2>
 
             {restoreMessage && (
               <Alert 

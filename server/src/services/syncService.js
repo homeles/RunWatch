@@ -1,7 +1,6 @@
 import { getGitHubClient } from '../utils/githubAuth.js';
 import * as workflowService from './workflowService.js';
 import SyncHistory from '../models/SyncHistory.js';
-import WorkflowRun from '../models/WorkflowRun.js';
 
 // Mark any existing in_progress syncs as interrupted when starting up
 const markInterruptedSyncs = async () => {
