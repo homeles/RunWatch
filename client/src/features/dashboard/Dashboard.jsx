@@ -980,7 +980,7 @@ const Dashboard = () => {
                                     borderColor: 'rgba(240, 246, 252, 0.1)'
                                   }
                                 }}>
-                                  {workflowData.runs.slice(0, 10).reverse().map((workflow, index) => {
+                                  {workflowData.runs.slice(0, 10).map((workflow, index) => {
                                     const run = {
                                       ...workflow.run,
                                       id: workflow.run.id.toString()
