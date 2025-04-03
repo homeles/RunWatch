@@ -2,7 +2,7 @@ import io from 'socket.io-client';
 import apiService from './apiService';
 
 // Use the environment variables, falling back to development defaults if not set
-const WS_URL = process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:5001';
+const WS_URL = process.env.REACT_APP_WEBSOCKET_URL || 'ws://localhost';
 
 // Default configuration for alerts
 export const defaultAlertConfig = {
