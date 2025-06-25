@@ -31,6 +31,9 @@ router.get('/stats', workflowController.getWorkflowStats);
 // Get active workflow metrics
 router.get('/workflow-runs/metrics', workflowController.getActiveMetrics);
 
+// Get active workflow job metrics
+router.get('/workflow-runs/jobs/metrics', workflowController.getActiveJobMetrics);
+
 // Get queued workflows
 router.get('/workflow-runs/queued', workflowController.getQueuedWorkflows);
 
