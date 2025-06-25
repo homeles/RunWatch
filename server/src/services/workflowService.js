@@ -595,7 +595,8 @@ export const getActiveWorkflowMetrics = async () => {
           },
           total: { $sum: 1 }
         }
-      }
+      },
+      { $sort: { totalRuns: -1 } }
     ]);
 
     console.log('Raw aggregate results:', JSON.stringify(workflowsByOrg, null, 2));
@@ -618,6 +619,83 @@ export const getActiveWorkflowMetrics = async () => {
     return metrics;
   } catch (error) {
     console.error('Error getting active workflow metrics:', error);
+    throw error;
+  }
+};
+
+export const getActiveJobMetrics = async () => {
+  try {
+    console.log('Starting to calculate active job metrics...');
+    const metrics = {};
+    
+    // First, let's verify the data with a simple count
+    const totalActive = await WorkflowRun.countDocuments({
+      'jobs.status': { $in: ['in_progress', 'queued', 'waiting', 'pending'] }
+    });
+    
+    console.log('Total active jobs:', totalActive);
+    
+    // Get all jobs grouped by organization
+    const jobsByOrg = await WorkflowRun.aggregate([
+      {
+        $match: {
+          'jobs': { $exists: true, $not: { $size: 0 } }
+        }
+      },
+      {
+        $unwind: '$jobs'
+      },
+      {
+        $match: {
+          'jobs.status': { $in: ['in_progress', 'queued', 'waiting', 'pending'] }
+        }
+      },
+      {
+        $project: {
+          orgName: { $arrayElemAt: [{ $split: ['$repository.fullName', '/'] }, 0] },
+          status: '$jobs.status'
+        }
+      },
+      {
+        $group: {
+          _id: '$orgName',
+          inProgress: {
+            $sum: { $cond: [{ $eq: ['$status', 'in_progress'] }, 1, 0] }
+          },
+          queued: {
+            $sum: {
+              $cond: [
+                { $in: ['$status', ['queued', 'waiting', 'pending']] },
+                1,
+                0
+              ]
+            }
+          },
+          total: { $sum: 1 }
+        }
+      }
+    ]);
+
+    console.log('Raw job aggregate results:', JSON.stringify(jobsByOrg, null, 2));
+
+    // Format the results
+    jobsByOrg.forEach(org => {
+      if (!org._id) {
+        console.log('Warning: Invalid organization data:', org);
+        return;
+      }
+      
+      metrics[org._id] = {
+        inProgress: org.inProgress || 0,
+        queued: org.queued || 0,
+        total: org.total || 0
+      };
+    });
+
+    console.log('Final job metrics:', JSON.stringify(metrics, null, 2));
+    return metrics;
+  } catch (error) {
+    console.error('Error getting active job metrics:', error);
     throw error;
   }
 };

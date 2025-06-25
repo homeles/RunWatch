@@ -187,6 +187,50 @@ const apiService = {
   async restoreDatabaseBackup(backupData) {
     const response = await axios.post(`${API_URL}/database/restore`, backupData);
     return response.data;
+  },
+
+  // Get active job metrics
+  getActiveJobMetrics: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/workflow-runs/jobs/metrics`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching active job metrics:', error);
+      throw error;
+    }
+  },
+
+  // Get workflow metrics
+  getWorkflowMetrics: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/workflow-runs/metrics`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching workflow metrics:', error);
+      throw error;
+    }
+  },
+
+  // Get job metrics
+  getJobMetrics: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/workflow-runs/jobs/metrics`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching job metrics:', error);
+      throw error;
+    }
+  },
+
+  // Get the status of the database
+  getDatabaseStatus: async () => {
+    try {
+      const response = await axios.get(`${API_URL}/db/status`);
+      return response.data.data || {};
+    } catch (error) {
+      console.error('Error fetching database status:', error);
+      throw error;
+    }
   }
 };
 
