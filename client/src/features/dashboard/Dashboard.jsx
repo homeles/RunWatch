@@ -242,6 +242,7 @@ const Dashboard = () => {
     totalPages: 1
   });
   const [buildMetrics, setBuildMetrics] = useState({});
+  const [jobMetrics, setJobMetrics] = useState({});
   const [statusFilter, setStatusFilter] = useState('all');
   const [alertConfig, setAlertConfig] = useState(() => {
     const savedConfig = localStorage.getItem('alertConfig');
@@ -466,20 +467,24 @@ const Dashboard = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
-  // Add function to calculate active and queued builds for each org
-  const fetchActiveMetrics = async () => {
+  // Add function to fetch both workflow and job metrics
+  const fetchMetrics = async () => {
     try {
-      const metrics = await apiService.getActiveMetrics();
-      setBuildMetrics(metrics);
+      const [workflowMetrics, jobMetricsData] = await Promise.all([
+        apiService.getWorkflowMetrics(),
+        apiService.getJobMetrics()
+      ]);
+      setBuildMetrics(workflowMetrics);
+      setJobMetrics(jobMetricsData);
     } catch (err) {
-      console.error('Failed to fetch active metrics:', err);
+      console.error('Failed to fetch metrics:', err);
     }
   };
 
   // Fetch active metrics initially and update them periodically
   useEffect(() => {
-    fetchActiveMetrics();
-    const interval = setInterval(fetchActiveMetrics, 30000); // Update every 30 seconds
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 30000); // Update every 30 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -504,7 +509,7 @@ const Dashboard = () => {
         });
 
         // Fetch fresh metrics instead of calculating them
-        fetchActiveMetrics();
+        fetchMetrics();
       },
       onWorkflowUpdate: (updatedWorkflow) => {
         setWorkflowRuns(prev => {
@@ -515,7 +520,7 @@ const Dashboard = () => {
             if (workflow.run.id === updatedWorkflow.run.id) {
               // If status changed, fetch fresh metrics
               if (workflow.run.status !== updatedWorkflow.run.status) {
-                fetchActiveMetrics();
+                fetchMetrics();
               }
               return updatedWorkflow;
             }
@@ -788,53 +793,47 @@ const Dashboard = () => {
                   >
                     {orgName}
                   </Typography>
-                  <Stack direction="row" spacing={2}>
+                  <Stack direction="row" spacing={1.5}>
+                    {/* Workflow Metrics */}
                     <Chip
                       icon={<PlayArrowIcon sx={{ fontSize: '1.25rem !important' }} />}
-                      label={`${buildMetrics[orgName]?.inProgress || 0} In Progress`}
+                      label={`${buildMetrics[orgName]?.inProgress || 0} Workflows Running`}
                       size="small"
-                      onClick={() => {
-                        setStatusFilter('in_progress');
-                        setPagination(prev => ({ ...prev, page: 1 }));
-                      }}
-                      sx={{ 
-                        bgcolor: 'rgba(35, 197, 98, 0.1)', 
-                        color: '#23C562',
-                        animation: buildMetrics[orgName]?.inProgress ? `${pulse} 2s ease-in-out infinite` : 'none',
-                        fontWeight: 500,
-                        height: '28px',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          bgcolor: 'rgba(35, 197, 98, 0.2)'
-                        },
-                        '& .MuiChip-label': {
-                          fontSize: '0.875rem',
-                          px: 1.5
-                        }
+                      sx={{
+                        bgcolor: 'rgba(88, 166, 255, 0.1)',
+                        color: '#58A6FF',
+                        '& .MuiChip-icon': { color: '#58A6FF' }
                       }}
                     />
                     <Chip
                       icon={<PendingIcon sx={{ fontSize: '1.25rem !important' }} />}
-                      label={`${buildMetrics[orgName]?.queued || 0} Queued`}
+                      label={`${buildMetrics[orgName]?.queued || 0} Workflows Queued`}
                       size="small"
-                      onClick={() => {
-                        setStatusFilter('queued');
-                        setPagination(prev => ({ ...prev, page: 1 }));
+                      sx={{
+                        bgcolor: 'rgba(248, 203, 47, 0.1)',
+                        color: '#F8CB2F',
+                        '& .MuiChip-icon': { color: '#F8CB2F' }
                       }}
-                      sx={{ 
-                        bgcolor: 'rgba(245, 166, 35, 0.1)', 
-                        color: '#F5A623',
-                        animation: buildMetrics[orgName]?.queued ? `${pulse} 2s ease-in-out infinite` : 'none',
-                        fontWeight: 500,
-                        height: '28px',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          bgcolor: 'rgba(245, 166, 35, 0.2)'
-                        },
-                        '& .MuiChip-label': {
-                          fontSize: '0.875rem',
-                          px: 1.5
-                        }
+                    />
+                    {/* Job Metrics */}
+                    <Chip
+                      icon={<PlayArrowIcon sx={{ fontSize: '1.25rem !important' }} />}
+                      label={`${jobMetrics[orgName]?.inProgress || 0} Jobs Running`}
+                      size="small"
+                      sx={{
+                        bgcolor: 'rgba(63, 185, 80, 0.1)',
+                        color: '#3FB950',
+                        '& .MuiChip-icon': { color: '#3FB950' }
+                      }}
+                    />
+                    <Chip
+                      icon={<PendingIcon sx={{ fontSize: '1.25rem !important' }} />}
+                      label={`${jobMetrics[orgName]?.queued || 0} Jobs Queued`}
+                      size="small"
+                      sx={{
+                        bgcolor: 'rgba(187, 128, 239, 0.1)',
+                        color: '#BB80EF',
+                        '& .MuiChip-icon': { color: '#BB80EF' }
                       }}
                     />
                   </Stack>
