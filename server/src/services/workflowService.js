@@ -596,7 +596,7 @@ export const getActiveWorkflowMetrics = async () => {
           total: { $sum: 1 }
         }
       },
-      { $sort: { totalRuns: -1 } }
+      { $sort: { total: -1 } }
     ]);
 
     console.log('Raw aggregate results:', JSON.stringify(workflowsByOrg, null, 2));
@@ -623,17 +623,17 @@ export const getActiveWorkflowMetrics = async () => {
   }
 };
 
-export const getActiveJobMetrics = async () => {
+export const getJobMetrics = async () => {
   try {
     console.log('Starting to calculate active job metrics...');
     const metrics = {};
     
     // First, let's verify the data with a simple count
-    const totalActive = await WorkflowRun.countDocuments({
-      'jobs.status': { $in: ['in_progress', 'queued', 'waiting', 'pending'] }
-    });
+    // const totalActive = await WorkflowRun.countDocuments({
+    //   'jobs.status': { $in: ['in_progress', 'queued', 'waiting', 'pending'] }
+    // });
     
-    console.log('Total active jobs:', totalActive);
+    // console.log('Total active jobs:', totalActive);
     
     // Get all jobs grouped by organization
     const jobsByOrg = await WorkflowRun.aggregate([

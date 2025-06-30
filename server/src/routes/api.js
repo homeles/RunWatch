@@ -32,7 +32,7 @@ router.get('/stats', workflowController.getWorkflowStats);
 router.get('/workflow-runs/metrics', workflowController.getActiveMetrics);
 
 // Get active workflow job metrics
-router.get('/workflow-runs/jobs/metrics', workflowController.getActiveJobMetrics);
+router.get('/workflow-runs/jobs/metrics', workflowController.getJobMetrics);
 
 // Get queued workflows
 router.get('/workflow-runs/queued', workflowController.getQueuedWorkflows);
