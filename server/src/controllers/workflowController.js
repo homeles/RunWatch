@@ -333,9 +333,9 @@ export const getQueuedWorkflows = async (req, res) => {
   }
 };
 
-export const getActiveJobMetrics = async (req, res) => {
+export const getJobMetrics = async (req, res) => {
   try {
-    const metrics = await workflowService.getActiveJobMetrics();
+    const metrics = await workflowService.getJobMetrics();
     return successResponse(res, metrics, 'Active job metrics retrieved successfully');
   } catch (error) {
     console.error('Error getting active job metrics:', error);
