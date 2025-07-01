@@ -84,6 +84,12 @@ The application is structured as follows:
 
 4. Set up your GitHub App:
    - Create a GitHub App in your organization's settings
+   - Define the below permissions for the App:
+     - `Read` access to actions, metadata, and organization administration
+     - `Read and write` access to workflows
+   - Subscribe the the below events:
+     - `Workflow Job`
+     - `Workflow Run`
    - Note down the App ID
    - Generate and download the private key
    - Place the private key file in your project directory
@@ -131,7 +137,7 @@ The application is structured as follows:
    - Payload URL: `https://your-server-url/api/webhooks/github`
    - Content type: `application/json`
    - Secret: Use the same secret as in your `.env` file
-   - Events: Select "Workflow runs" and any other events you want to track
+   - Events: Select "Workflow runs" and "Workflow Jobs"
 
 3. Save the webhook
 
