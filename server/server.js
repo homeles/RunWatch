@@ -1,6 +1,8 @@
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { config } from 'dotenv';
 import { createNodeMiddleware } from '@octokit/webhooks';
 import connectDB from './src/config/db.js';
@@ -30,8 +32,42 @@ const io = setupSocket(server);
 // Make io globally available
 global.io = io;
 
-// Basic middleware
-app.use(cors());
+// Security headers
+app.use(helmet());
+
+// CORS - restrict to allowed origins only
+const allowedOrigins = [
+  process.env.CLIENT_URL || 'http://localhost',
+  'http://localhost:3000'
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. server-to-server, curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS policy: origin ${origin} is not allowed`));
+  },
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
+
+// Global rate limiter — 100 requests per 15 minutes per IP
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' }
+});
+app.use('/api', globalLimiter);
+
+// Stricter rate limit for sync endpoints (expensive operations)
+const syncLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: { error: 'Too many sync requests, please slow down.' }
+});
+app.use('/api/sync', syncLimiter);
 
 // Initialize GitHub webhooks instance
 const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
@@ -94,20 +130,14 @@ app.post('/api/webhooks/github', async (req, res) => {
   }
 });
 
-// GET handler for webhook endpoint verification
+// GET handler for webhook endpoint — returns minimal response to avoid information disclosure
 app.get('/api/webhooks/github', (req, res) => {
-  console.log('Received GET request to webhook endpoint - likely a verification request');
-  console.log('Headers:', req.headers);
-  res.status(200).json({ 
-    message: 'GitHub webhook endpoint is active', 
-    timestamp: new Date().toISOString(),
-    note: 'This endpoint accepts POST requests from GitHub webhooks'
-  });
+  res.status(200).json({ status: 'ok' });
 });
 
-// Configure Express app with increased body size limit for non-webhook routes
-app.use(express.json({ limit: '100mb' }));
-app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+// Configure Express app - reduced body size limit (10mb is more than sufficient)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Make io available in request object
 app.use((req, res, next) => {

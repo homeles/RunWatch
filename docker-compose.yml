@@ -8,14 +8,15 @@ services:
     restart: always
     environment:
       MONGO_INITDB_DATABASE: runwatch
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     volumes:
       - mongodb_data:/data/db
-    ports:
-      - "27017:27017"
+    # Port 27017 is NOT exposed to the host — only accessible within the internal network
     networks:
       - runwatch-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok", "--username", "${MONGO_ROOT_USERNAME}", "--password", "${MONGO_ROOT_PASSWORD}", "--authenticationDatabase", "admin"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,9 +30,9 @@ services:
     container_name: runwatch-server
     restart: always
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 5001
-      MONGODB_URI: mongodb://mongodb:27017/runwatch
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/runwatch?authSource=admin
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
       CLIENT_URL: ${CLIENT_URL:-http://localhost}
       GITHUB_APP_ID: ${GITHUB_APP_ID}

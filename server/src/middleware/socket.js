@@ -1,11 +1,17 @@
 import { Server } from 'socket.io';
 
 const setupSocket = (server) => {
+  const allowedOrigins = [
+    process.env.CLIENT_URL || 'http://localhost',
+    'http://localhost:3000'
+  ];
+
   const io = new Server(server, {
     cors: {
-      origin: process.env.NODE_ENV === 'production' 
-        ? process.env.CLIENT_URL || 'https://your-production-domain.com' 
-        : 'http://localhost:3000',
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`Socket.IO CORS: origin ${origin} is not allowed`));
+      },
       methods: ['GET', 'POST'],
       credentials: true
     },
@@ -14,22 +20,18 @@ const setupSocket = (server) => {
 
   // Socket.IO connection handling
   io.on('connection', (socket) => {
-    console.log('Client connected');
-    
-    // Send a test event to verify connection
+    console.log('Client connected:', socket.id);
+
+    // Send a connection confirmation
     socket.emit('connection_established', { message: 'Connected to server' });
-    
-    // Handle long-queued workflow events from clients
-    socket.on('long-queued-workflow', (data) => {
-      console.log('Received long-queued-workflow event from client:', data);
-      
-      // Broadcast the event to all clients (including the sender)
-      io.emit('long-queued-workflow', data);
-      console.log('Broadcasted long-queued-workflow event to all clients');
-    });
-    
+
+    // Validate that long-queued-workflow events come from trusted server-side logic only.
+    // Clients should NOT be able to trigger broadcasts directly.
+    // This event is intentionally removed from client-facing handlers.
+    // Server-side code emits 'long-queued-workflow' directly via io.emit() when needed.
+
     socket.on('disconnect', () => {
-      console.log('Client disconnected');
+      console.log('Client disconnected:', socket.id);
     });
   });
 
