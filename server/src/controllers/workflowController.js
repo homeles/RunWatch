@@ -3,6 +3,16 @@ import WorkflowRun from '../models/WorkflowRun.js';
 import { successResponse, errorResponse } from '../utils/responseHandler.js';
 import * as workflowService from '../services/workflowService.js';
 
+// Middleware: restrict backup/restore endpoints to internal/localhost only
+export const requireLocalhost = (req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress || '';
+  const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+  if (!isLocal) {
+    return res.status(403).json({ error: 'Forbidden: this endpoint is restricted to localhost' });
+  }
+  next();
+};
+
 export const handleWorkflowRun = async (req, res) => {
   try {
     const workflowRun = await workflowService.processWorkflowRun(req.body);
@@ -15,16 +25,18 @@ export const handleWorkflowRun = async (req, res) => {
 
 export const getAllWorkflowRuns = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 30;
-    const searchQuery = req.query.search || '';
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 30));
+    const searchQuery = req.query.search ? String(req.query.search).slice(0, 100) : '';
     const status = req.query.status || 'all';
     const skip = (page - 1) * pageSize;
 
     // Build the query with search and status filters
     let query = {};
     if (searchQuery) {
-      query['repository.fullName'] = { $regex: searchQuery, $options: 'i' };
+      // Escape regex special characters to prevent ReDoS
+      const escaped = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query['repository.fullName'] = { $regex: escaped, $options: 'i' };
     }
 
     // Add status filter

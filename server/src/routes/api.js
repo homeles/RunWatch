@@ -3,7 +3,6 @@ import * as workflowController from '../controllers/workflowController.js';
 import { syncGitHubData, getAvailableOrganizations, getSyncHistory } from '../services/syncService.js';
 import { validateGitHubConfig } from '../utils/githubAuth.js';
 import SyncHistory from '../models/SyncHistory.js';
-
 const router = express.Router();
 
 // Health check endpoint
@@ -49,9 +48,9 @@ router.post('/workflow-runs/:runId/jobs', workflowController.updateWorkflowJobs)
 // Database status endpoint
 router.get('/db/status', workflowController.getDatabaseStatus);
 
-// Database backup routes
-router.get('/database/backup', workflowController.createBackup);
-router.post('/database/restore', workflowController.restoreBackup);
+// Database backup/restore — restricted to localhost only (sensitive operations)
+router.get('/database/backup', workflowController.requireLocalhost, workflowController.createBackup);
+router.post('/database/restore', workflowController.requireLocalhost, workflowController.restoreBackup);
 
 // Get available organizations
 router.get('/organizations', async (req, res) => {
