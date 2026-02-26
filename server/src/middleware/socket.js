@@ -1,11 +1,18 @@
 import { Server } from 'socket.io';
 
 const setupSocket = (server) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // In production, CLIENT_URL must be set — refuse to start with a permissive default.
+  if (isProduction && !process.env.CLIENT_URL) {
+    throw new Error('Socket.IO CORS misconfiguration: CLIENT_URL must be set in production');
+  }
+
   // Mirror the Express CORS allowlist: localhost:3000 only in non-production.
   // Originless connections (server-to-server / CLI clients) are allowed, matching Express CORS behaviour.
   const allowedOrigins = [
-    process.env.CLIENT_URL || 'http://localhost',
-    ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000'] : [])
+    ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ['http://localhost']),
+    ...(!isProduction ? ['http://localhost:3000'] : [])
   ];
 
   const io = new Server(server, {

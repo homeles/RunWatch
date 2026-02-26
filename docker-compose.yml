@@ -10,8 +10,12 @@ services:
       MONGO_INITDB_DATABASE: runwatch
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?MONGO_ROOT_USERNAME must be set in .env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set in .env}
+      # App-level credentials (least-privilege user created by mongo-init.js)
+      MONGO_APP_USERNAME: ${MONGO_APP_USERNAME:?MONGO_APP_USERNAME must be set in .env}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD must be set in .env}
     volumes:
       - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     # Port 27017 is NOT exposed to the host — only accessible within the internal network
     networks:
       - runwatch-network
@@ -32,11 +36,13 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 5001
-      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:?MONGO_ROOT_USERNAME must be set in .env}:${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set in .env}@mongodb:27017/runwatch?authSource=admin
+      # Application connects with a least-privilege user (not the root admin)
+      MONGODB_URI: mongodb://${MONGO_APP_USERNAME:?MONGO_APP_USERNAME must be set in .env}:${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD must be set in .env}@mongodb:27017/runwatch?authSource=runwatch
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
       CLIENT_URL: ${CLIENT_URL:-http://localhost}
       GITHUB_APP_ID: ${GITHUB_APP_ID}
       GITHUB_APP_PRIVATE_KEY_PATH: /app/private-key.pem
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:?ADMIN_API_TOKEN must be set in .env}
     volumes:
       - type: bind
         source: ${GITHUB_APP_PRIVATE_KEY_PATH}

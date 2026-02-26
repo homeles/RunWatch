@@ -88,10 +88,14 @@ export const getAllWorkflowRuns = async (req, res) => {
     // Get the paginated repositories
     const paginatedRepos = distinctRepos.slice(skip, skip + pageSize);
 
-    // Then get workflow runs for these repositories
+    // Then get workflow runs for these repositories.
+    // Use $and to combine the $in (pagination) constraint with any search/status filters
+    // so that spreading ...query does not overwrite the 'repository.fullName' $in condition.
     const workflowRuns = await WorkflowRun.find({
-      'repository.fullName': { $in: paginatedRepos },
-      ...query
+      $and: [
+        { 'repository.fullName': { $in: paginatedRepos } },
+        query
+      ]
     }).sort({ 'run.created_at': -1 });
 
     return successResponse(res, {

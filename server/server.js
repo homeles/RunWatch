@@ -58,14 +58,19 @@ app.use(cors({
 }));
 
 // Global rate limiter — 100 requests per 15 minutes per IP
-// GitHub webhooks are excluded since they can legitimately arrive in bursts
+// GitHub webhooks and sync endpoints are excluded from the global limiter:
+//   - Webhooks can legitimately burst from shared GitHub IP ranges
+//   - Sync endpoints have their own stricter limiter (10/min); applying both would
+//     mean the global 100/15min (~6.7/min effective) throttles before the intended 10/min
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' },
-  skip: (req) => req.path.startsWith('/webhooks/github')
+  skip: (req) =>
+    req.path.startsWith('/webhooks/github') ||
+    req.path.startsWith('/sync')
 });
 app.use('/api', globalLimiter);
 
@@ -144,15 +149,24 @@ app.get('/api/webhooks/github', (req, res) => {
 });
 
 // Configure Express body parsing.
+// Pre-define parser instances (not per-request) for efficiency.
 // /api/database/restore can receive large backup payloads — apply 100mb limit for that route only.
 // All other routes use a conservative 10mb limit.
+const defaultJsonParser = express.json({ limit: '10mb' });
+const defaultUrlencodedParser = express.urlencoded({ extended: true, limit: '10mb' });
+const restoreJsonParser = express.json({ limit: '100mb' });
+const restoreUrlencodedParser = express.urlencoded({ extended: true, limit: '100mb' });
+
 app.use((req, res, next) => {
-  const limit = req.path && req.path.startsWith('/api/database/restore') ? '100mb' : '10mb';
-  const jsonParser = express.json({ limit });
-  const urlencodedParser = express.urlencoded({ extended: true, limit });
-  jsonParser(req, res, (err) => {
+  if (req.path && req.path.startsWith('/api/database/restore')) {
+    return restoreJsonParser(req, res, (err) => {
+      if (err) return next(err);
+      restoreUrlencodedParser(req, res, next);
+    });
+  }
+  defaultJsonParser(req, res, (err) => {
     if (err) return next(err);
-    urlencodedParser(req, res, next);
+    defaultUrlencodedParser(req, res, next);
   });
 });
 
