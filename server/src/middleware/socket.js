@@ -9,8 +9,10 @@ const setupSocket = (server) => {
   const io = new Server(server, {
     cors: {
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-        callback(new Error(`Socket.IO CORS: origin ${origin} is not allowed`));
+        if (origin && allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error(`Socket.IO CORS: origin ${origin || 'undefined'} is not allowed`));
       },
       methods: ['GET', 'POST'],
       credentials: true

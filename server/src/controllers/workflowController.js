@@ -3,11 +3,43 @@ import WorkflowRun from '../models/WorkflowRun.js';
 import { successResponse, errorResponse } from '../utils/responseHandler.js';
 import * as workflowService from '../services/workflowService.js';
 
+// Treat standard loopback and private network ranges as "internal" so that
+// Docker bridge / reverse-proxy addresses like 172.17.0.1 are allowed.
+const isInternalIp = (rawIp) => {
+  if (!rawIp) return false;
+
+  let ip = rawIp;
+  // Normalize IPv6-mapped IPv4 addresses (e.g. ::ffff:127.0.0.1)
+  if (ip.startsWith('::ffff:')) {
+    ip = ip.substring('::ffff:'.length);
+  }
+
+  // IPv6 loopback
+  if (ip === '::1') return true;
+
+  // IPv4 loopback range 127.0.0.0/8
+  if (ip === '127.0.0.1' || ip.startsWith('127.')) return true;
+
+  // RFC1918 private ranges
+  if (ip.startsWith('10.')) return true;
+  if (ip.startsWith('192.168.')) return true;
+  const match172 = ip.match(/^172\.(\d+)\./);
+  if (match172) {
+    const secondOctet = Number(match172[1]);
+    if (secondOctet >= 16 && secondOctet <= 31) return true;
+  }
+
+  return false;
+};
+
 // Middleware: restrict backup/restore endpoints to internal/localhost only
 export const requireLocalhost = (req, res, next) => {
-  const ip = req.ip || req.connection.remoteAddress || '';
-  const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
-  if (!isLocal) {
+  const ip =
+    (req.socket && req.socket.remoteAddress) ||
+    (req.connection && req.connection.remoteAddress) ||
+    req.ip ||
+    '';
+  if (!isInternalIp(ip)) {
     return res.status(403).json({ error: 'Forbidden: this endpoint is restricted to localhost' });
   }
   next();

@@ -45,19 +45,24 @@ app.use(cors({
     // Allow requests with no origin (e.g. server-to-server, curl)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`CORS policy: origin ${origin} is not allowed`));
+    // For disallowed origins, indicate rejection without throwing an error
+    callback(null, false);
   },
   methods: ['GET', 'POST'],
   credentials: true
 }));
 
 // Global rate limiter — 100 requests per 15 minutes per IP
+// GitHub webhooks are excluded since they can legitimately arrive in bursts
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests, please try again later.' }
+  message: { error: 'Too many requests, please try again later.' },
+  skip: (req) =>
+    req.path === '/webhooks/github' ||
+    req.path.startsWith('/webhooks/github/')
 });
 app.use('/api', globalLimiter);
 
@@ -135,7 +140,10 @@ app.get('/api/webhooks/github', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Configure Express app - reduced body size limit (10mb is more than sufficient)
+// Configure Express app - reduced body size limit (10mb default, 100mb for restore)
+// Allow larger payloads specifically for database restore while keeping a smaller default
+app.use('/api/database/restore', express.json({ limit: '100mb' }));
+app.use('/api/database/restore', express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

@@ -8,8 +8,8 @@ services:
     restart: always
     environment:
       MONGO_INITDB_DATABASE: runwatch
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?MONGO_ROOT_USERNAME must be set in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set in .env}
     volumes:
       - mongodb_data:/data/db
     # Port 27017 is NOT exposed to the host — only accessible within the internal network
@@ -32,7 +32,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 5001
-      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/runwatch?authSource=admin
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:?MONGO_ROOT_USERNAME must be set in .env}:${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set in .env}@mongodb:27017/runwatch?authSource=admin
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
       CLIENT_URL: ${CLIENT_URL:-http://localhost}
       GITHUB_APP_ID: ${GITHUB_APP_ID}
