@@ -1,18 +1,22 @@
 import { Server } from 'socket.io';
 
 const setupSocket = (server) => {
+  // Mirror the Express CORS allowlist: localhost:3000 only in non-production.
+  // Originless connections (server-to-server / CLI clients) are allowed, matching Express CORS behaviour.
   const allowedOrigins = [
     process.env.CLIENT_URL || 'http://localhost',
-    'http://localhost:3000'
+    ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000'] : [])
   ];
 
   const io = new Server(server, {
     cors: {
       origin: (origin, callback) => {
-        if (origin && allowedOrigins.includes(origin)) {
+        // Allow server-to-server / CLI clients that don't send an Origin header
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
-        return callback(new Error(`Socket.IO CORS: origin ${origin || 'undefined'} is not allowed`));
+        return callback(new Error(`Socket.IO CORS: origin ${origin} is not allowed`));
       },
       methods: ['GET', 'POST'],
       credentials: true

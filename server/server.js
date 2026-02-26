@@ -35,10 +35,15 @@ global.io = io;
 // Security headers
 app.use(helmet());
 
+// Trust one proxy hop (Nginx in Docker) so that req.ip reflects the real client IP
+// for rate limiting and other IP-dependent logic.
+app.set('trust proxy', 1);
+
 // CORS - restrict to allowed origins only
+// localhost:3000 is only included in non-production to avoid expanding trusted origins in prod.
 const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost',
-  'http://localhost:3000'
+  ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000'] : [])
 ];
 app.use(cors({
   origin: (origin, callback) => {

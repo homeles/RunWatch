@@ -48,9 +48,10 @@ router.post('/workflow-runs/:runId/jobs', workflowController.updateWorkflowJobs)
 // Database status endpoint
 router.get('/db/status', workflowController.getDatabaseStatus);
 
-// Database backup/restore — restricted to localhost only (sensitive operations)
-router.get('/database/backup', workflowController.requireLocalhost, workflowController.createBackup);
-router.post('/database/restore', workflowController.requireLocalhost, workflowController.restoreBackup);
+// Database backup/restore — protected by admin token (ADMIN_API_TOKEN env var).
+// IP-based restriction is unreliable behind Docker/Nginx; use Bearer token or X-Admin-Token header.
+router.get('/database/backup', workflowController.requireAdminToken, workflowController.createBackup);
+router.post('/database/restore', workflowController.requireAdminToken, workflowController.restoreBackup);
 
 // Get available organizations
 router.get('/organizations', async (req, res) => {

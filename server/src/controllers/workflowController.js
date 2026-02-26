@@ -3,47 +3,34 @@ import WorkflowRun from '../models/WorkflowRun.js';
 import { successResponse, errorResponse } from '../utils/responseHandler.js';
 import * as workflowService from '../services/workflowService.js';
 
-// Treat standard loopback and private network ranges as "internal" so that
-// Docker bridge / reverse-proxy addresses like 172.17.0.1 are allowed.
-const isInternalIp = (rawIp) => {
-  if (!rawIp) return false;
+// Middleware: restrict backup/restore endpoints to requests bearing a valid ADMIN_API_TOKEN.
+// IP-based allowlists are unreliable behind Docker/Nginx (backend sees the proxy's private IP,
+// not the originating client IP). A pre-shared token provides explicit, portable access control.
+//
+// Usage: set ADMIN_API_TOKEN to a long random secret in your .env file.
+// Pass it as: Authorization: Bearer <token>   OR   X-Admin-Token: <token>
+export const requireAdminToken = (req, res, next) => {
+  const adminToken = process.env.ADMIN_API_TOKEN;
 
-  let ip = rawIp;
-  // Normalize IPv6-mapped IPv4 addresses (e.g. ::ffff:127.0.0.1)
-  if (ip.startsWith('::ffff:')) {
-    ip = ip.substring('::ffff:'.length);
+  if (!adminToken) {
+    // If no token is configured, fail closed — never allow access.
+    return res.status(503).json({ error: 'Admin access is not configured on this server.' });
   }
 
-  // IPv6 loopback
-  if (ip === '::1') return true;
+  const authHeader = req.headers['authorization'] || '';
+  const tokenHeader = req.headers['x-admin-token'] || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  const provided = bearerToken || tokenHeader;
 
-  // IPv4 loopback range 127.0.0.0/8
-  if (ip === '127.0.0.1' || ip.startsWith('127.')) return true;
-
-  // RFC1918 private ranges
-  if (ip.startsWith('10.')) return true;
-  if (ip.startsWith('192.168.')) return true;
-  const match172 = ip.match(/^172\.(\d+)\./);
-  if (match172) {
-    const secondOctet = Number(match172[1]);
-    if (secondOctet >= 16 && secondOctet <= 31) return true;
+  if (!provided || provided !== adminToken) {
+    return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
   }
 
-  return false;
-};
-
-// Middleware: restrict backup/restore endpoints to internal/localhost only
-export const requireLocalhost = (req, res, next) => {
-  const ip =
-    (req.socket && req.socket.remoteAddress) ||
-    (req.connection && req.connection.remoteAddress) ||
-    req.ip ||
-    '';
-  if (!isInternalIp(ip)) {
-    return res.status(403).json({ error: 'Forbidden: this endpoint is restricted to localhost' });
-  }
   next();
 };
+
+// Keep legacy alias for any existing route references — points to the new token-based guard.
+export const requireLocalhost = requireAdminToken;
 
 export const handleWorkflowRun = async (req, res) => {
   try {
