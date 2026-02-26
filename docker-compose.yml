@@ -16,7 +16,7 @@ services:
     networks:
       - runwatch-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok", "--username", "${MONGO_ROOT_USERNAME}", "--password", "${MONGO_ROOT_PASSWORD}", "--authenticationDatabase", "admin"]
+      test: ["CMD-SHELL", "mongosh --eval \"db.runCommand('ping').ok\" --username \"$MONGO_ROOT_USERNAME\" --password \"$MONGO_ROOT_PASSWORD\" --authenticationDatabase admin"]
       interval: 10s
       timeout: 5s
       retries: 5

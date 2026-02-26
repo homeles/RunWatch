@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 import WorkflowRun from '../models/WorkflowRun.js';
 import { successResponse, errorResponse } from '../utils/responseHandler.js';
 import * as workflowService from '../services/workflowService.js';
@@ -22,7 +23,18 @@ export const requireAdminToken = (req, res, next) => {
   const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
   const provided = bearerToken || tokenHeader;
 
-  if (!provided || provided !== adminToken) {
+  if (!provided) {
+    return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
+  }
+
+  // Use constant-time comparison to prevent timing attacks
+  try {
+    const adminBuf = Buffer.from(adminToken);
+    const providedBuf = Buffer.from(provided);
+    if (adminBuf.length !== providedBuf.length || !crypto.timingSafeEqual(adminBuf, providedBuf)) {
+      return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
+    }
+  } catch {
     return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
   }
 

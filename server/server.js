@@ -50,8 +50,8 @@ app.use(cors({
     // Allow requests with no origin (e.g. server-to-server, curl)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    // For disallowed origins, indicate rejection without throwing an error
-    callback(null, false);
+    // Return an error for better debugging while still blocking the request
+    callback(new Error(`CORS: origin ${origin} is not allowed`), false);
   },
   methods: ['GET', 'POST'],
   credentials: true
@@ -65,9 +65,7 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' },
-  skip: (req) =>
-    req.path === '/webhooks/github' ||
-    req.path.startsWith('/webhooks/github/')
+  skip: (req) => req.path.startsWith('/webhooks/github')
 });
 app.use('/api', globalLimiter);
 
@@ -145,12 +143,18 @@ app.get('/api/webhooks/github', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Configure Express app - reduced body size limit (10mb default, 100mb for restore)
-// Allow larger payloads specifically for database restore while keeping a smaller default
-app.use('/api/database/restore', express.json({ limit: '100mb' }));
-app.use('/api/database/restore', express.urlencoded({ extended: true, limit: '100mb' }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Configure Express body parsing.
+// /api/database/restore can receive large backup payloads — apply 100mb limit for that route only.
+// All other routes use a conservative 10mb limit.
+app.use((req, res, next) => {
+  const limit = req.path && req.path.startsWith('/api/database/restore') ? '100mb' : '10mb';
+  const jsonParser = express.json({ limit });
+  const urlencodedParser = express.urlencoded({ extended: true, limit });
+  jsonParser(req, res, (err) => {
+    if (err) return next(err);
+    urlencodedParser(req, res, next);
+  });
+});
 
 // Make io available in request object
 app.use((req, res, next) => {
