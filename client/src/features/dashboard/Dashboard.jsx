@@ -481,12 +481,22 @@ const Dashboard = () => {
     }
   };
 
+  // Debounced version of fetchMetrics for WebSocket events to avoid rapid-fire API calls
+  const metricsTimerRef = useRef(null);
+  const debouncedFetchMetrics = () => {
+    if (metricsTimerRef.current) clearTimeout(metricsTimerRef.current);
+    metricsTimerRef.current = setTimeout(fetchMetrics, 2000);
+  };
+
   // Fetch active metrics initially and update them periodically
   useEffect(() => {
     fetchMetrics();
     const interval = setInterval(fetchMetrics, 30000); // Update every 30 seconds
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (metricsTimerRef.current) clearTimeout(metricsTimerRef.current);
+    };
   }, []);
 
   // Enhanced WebSocket update handler
@@ -509,7 +519,7 @@ const Dashboard = () => {
         });
 
         // Fetch fresh metrics instead of calculating them
-        fetchMetrics();
+        debouncedFetchMetrics();
       },
       onWorkflowUpdate: (updatedWorkflow) => {
         setWorkflowRuns(prev => {
@@ -520,7 +530,7 @@ const Dashboard = () => {
             if (workflow.run.id === updatedWorkflow.run.id) {
               // If status changed, fetch fresh metrics
               if (workflow.run.status !== updatedWorkflow.run.status) {
-                fetchMetrics();
+                debouncedFetchMetrics();
               }
               return updatedWorkflow;
             }
