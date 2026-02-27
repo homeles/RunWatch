@@ -145,7 +145,7 @@ app.post('/api/webhooks/github', async (req, res) => {
     console.error('Webhook verification or processing failed:', error);
     res.status(400).json({ 
       error: 'Webhook verification failed',
-      ...(process.env.NODE_ENV !== 'production' && { message: error.message })
+      ...(process.env.NODE_ENV === 'development' && { message: error.message })
     });
   }
 });
@@ -181,7 +181,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({
     error: 'Internal Server Error',
     // Only expose error details in development to prevent information disclosure
-    ...(process.env.NODE_ENV !== 'production' && { message: err.message })
+    ...(process.env.NODE_ENV === 'development' && { message: err.message })
   });
 });
 

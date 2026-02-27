@@ -36,7 +36,10 @@ export const requireAdminToken = (req, res, next) => {
     if (!crypto.timingSafeEqual(adminHash, providedHash)) {
       return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
     }
-  } catch {
+  } catch (err) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error during admin token verification:', err);
+    }
     return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
   }
 
@@ -63,6 +66,12 @@ export const getAllWorkflowRuns = async (req, res) => {
     const searchQuery = req.query.search ? String(req.query.search).slice(0, 100) : '';
     const status = req.query.status || 'all';
     const skip = (page - 1) * pageSize;
+
+    // Validate status against known values to prevent unexpected query behavior
+    const validStatuses = ['all', 'in_progress', 'queued', 'waiting', 'pending', 'success', 'failure', 'cancelled', 'skipped', 'timed_out', 'action_required', 'stale', 'neutral', 'startup_failure'];
+    if (!validStatuses.includes(status)) {
+      return errorResponse(res, `Invalid status filter: ${status}`, 400);
+    }
 
     // Build the query with search and status filters
     let query = {};

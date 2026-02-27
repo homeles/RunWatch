@@ -38,10 +38,11 @@ const setupSocket = (server) => {
     // Send a connection confirmation
     socket.emit('connection_established', { message: 'Connected to server' });
 
-    // Validate that long-queued-workflow events come from trusted server-side logic only.
-    // Clients should NOT be able to trigger broadcasts directly.
-    // This event is intentionally removed from client-facing handlers.
-    // Server-side code emits 'long-queued-workflow' directly via io.emit() when needed.
+    // Note on long-queued-workflow:
+    // This event has been removed from Socket.IO communication entirely and is now
+    // handled purely on the client (see client/src/api/socketService.js for details).
+    // Clients cannot send or receive a 'long-queued-workflow' Socket.IO event, and the
+    // server does not emit it via io.emit().
 
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.id);

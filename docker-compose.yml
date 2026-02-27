@@ -34,12 +34,16 @@ services:
     container_name: runwatch-server
     restart: always
     environment:
+      # Default to production for security; for local development with dev settings
+      # (e.g., allowing CORS from localhost:3000), set NODE_ENV=development in your .env file.
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 5001
-      # Application connects with a least-privilege user (not the root admin)
-      # NOTE: If MONGO_APP_USERNAME or MONGO_APP_PASSWORD contain URI-reserved characters
-      # (such as @, :, /, ?, #, [, ], or %), they must be percent-encoded in .env,
-      # otherwise the MongoDB connection string will break.
+      # WARNING: MONGO_APP_USERNAME and MONGO_APP_PASSWORD are interpolated directly
+      # into the MongoDB URI below. If either value contains any URI-reserved characters
+      # (such as @, :, /, ?, #, [, ], or %), those characters MUST be percent-encoded
+      # in your .env file (for example: p@ss:word -> p%40ss%3Aword), otherwise the
+      # connection string will be invalid and the server will fail to connect to MongoDB.
+      # See: https://www.mongodb.com/docs/manual/reference/connection-string/#standard-connection-string-format
       MONGODB_URI: mongodb://${MONGO_APP_USERNAME:?MONGO_APP_USERNAME must be set in .env}:${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD must be set in .env}@mongodb:27017/runwatch?authSource=runwatch
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
       CLIENT_URL: ${CLIENT_URL:?CLIENT_URL must be set in .env}
