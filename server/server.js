@@ -156,10 +156,18 @@ app.get('/api/webhooks/github', (req, res) => {
 });
 
 // Configure Express body parsing — global 10mb limit.
-// The 100mb limit for /api/database/restore is applied on the route itself (after auth)
-// to prevent unauthenticated clients from forcing expensive large-body parsing.
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// /api/database/restore is excluded here because it needs a 100mb limit, applied on the
+// route itself (after auth) to prevent unauthenticated clients from forcing large-body parsing.
+const globalJsonParser = express.json({ limit: '10mb' });
+const globalUrlencodedParser = express.urlencoded({ extended: true, limit: '10mb' });
+app.use((req, res, next) => {
+  // Skip global body parsing for restore — handled by route-specific middleware after auth
+  if (req.path === '/api/database/restore') return next();
+  globalJsonParser(req, res, (err) => {
+    if (err) return next(err);
+    globalUrlencodedParser(req, res, next);
+  });
+});
 
 // Make io available in request object
 app.use((req, res, next) => {
