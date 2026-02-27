@@ -39,7 +39,7 @@ services:
       # Application connects with a least-privilege user (not the root admin)
       MONGODB_URI: mongodb://${MONGO_APP_USERNAME:?MONGO_APP_USERNAME must be set in .env}:${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD must be set in .env}@mongodb:27017/runwatch?authSource=runwatch
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
-      CLIENT_URL: ${CLIENT_URL:-http://localhost}
+      CLIENT_URL: ${CLIENT_URL:?CLIENT_URL must be set in .env}
       GITHUB_APP_ID: ${GITHUB_APP_ID}
       GITHUB_APP_PRIVATE_KEY_PATH: /app/private-key.pem
       ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:?ADMIN_API_TOKEN must be set in .env}
