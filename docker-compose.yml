@@ -8,14 +8,19 @@ services:
     restart: always
     environment:
       MONGO_INITDB_DATABASE: runwatch
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?MONGO_ROOT_USERNAME must be set in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MONGO_ROOT_PASSWORD must be set in .env}
+      # App-level credentials (least-privilege user created by mongo-init.js)
+      MONGO_APP_USERNAME: ${MONGO_APP_USERNAME:?MONGO_APP_USERNAME must be set in .env}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD must be set in .env}
     volumes:
       - mongodb_data:/data/db
-    ports:
-      - "27017:27017"
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    # Port 27017 is NOT exposed to the host — only accessible within the internal network
     networks:
       - runwatch-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      test: ["CMD-SHELL", "mongosh --eval \"db.runCommand('ping').ok\" --username \"${MONGO_ROOT_USERNAME}\" --password \"${MONGO_ROOT_PASSWORD}\" --authenticationDatabase admin"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,13 +34,22 @@ services:
     container_name: runwatch-server
     restart: always
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      # Default to production for security; for local development with dev settings
+      # (e.g., allowing CORS from localhost:3000), set NODE_ENV=development in your .env file.
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 5001
-      MONGODB_URI: mongodb://mongodb:27017/runwatch
+      # WARNING: MONGO_APP_USERNAME and MONGO_APP_PASSWORD are interpolated directly
+      # into the MongoDB URI below. If either value contains any URI-reserved characters
+      # (such as @, :, /, ?, #, [, ], or %), those characters MUST be percent-encoded
+      # in your .env file (for example: p@ss:word -> p%40ss%3Aword), otherwise the
+      # connection string will be invalid and the server will fail to connect to MongoDB.
+      # See: https://www.mongodb.com/docs/manual/reference/connection-string/#standard-connection-string-format
+      MONGODB_URI: mongodb://${MONGO_APP_USERNAME:?MONGO_APP_USERNAME must be set in .env}:${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD must be set in .env}@mongodb:27017/runwatch?authSource=runwatch
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
-      CLIENT_URL: ${CLIENT_URL:-http://localhost}
+      CLIENT_URL: ${CLIENT_URL:?CLIENT_URL must be set in .env}
       GITHUB_APP_ID: ${GITHUB_APP_ID}
       GITHUB_APP_PRIVATE_KEY_PATH: /app/private-key.pem
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:?ADMIN_API_TOKEN must be set in .env}
     volumes:
       - type: bind
         source: ${GITHUB_APP_PRIVATE_KEY_PATH}
@@ -55,8 +69,8 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_URL: http://localhost/api
-        REACT_APP_WEBSOCKET_URL: ws://localhost
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost/api}
+        REACT_APP_WEBSOCKET_URL: ${REACT_APP_WEBSOCKET_URL:-ws://localhost}
     container_name: runwatch-client
     restart: always
     ports:

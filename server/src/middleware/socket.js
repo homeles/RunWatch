@@ -1,11 +1,30 @@
 import { Server } from 'socket.io';
 
 const setupSocket = (server) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // In production, CLIENT_URL must be set — refuse to start with a permissive default.
+  if (isProduction && !process.env.CLIENT_URL) {
+    throw new Error('Socket.IO CORS misconfiguration: CLIENT_URL must be set in production');
+  }
+
+  // Mirror the Express CORS allowlist: localhost:3000 only in non-production.
+  // Originless connections (server-to-server / CLI clients) are allowed, matching Express CORS behaviour.
+  const allowedOrigins = [
+    ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ['http://localhost']),
+    ...(!isProduction ? ['http://localhost:3000'] : [])
+  ];
+
   const io = new Server(server, {
     cors: {
-      origin: process.env.NODE_ENV === 'production' 
-        ? process.env.CLIENT_URL || 'https://your-production-domain.com' 
-        : 'http://localhost:3000',
+      origin: (origin, callback) => {
+        // Allow server-to-server / CLI clients that don't send an Origin header
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error(`Socket.IO CORS: origin ${origin} is not allowed`));
+      },
       methods: ['GET', 'POST'],
       credentials: true
     },
@@ -14,22 +33,19 @@ const setupSocket = (server) => {
 
   // Socket.IO connection handling
   io.on('connection', (socket) => {
-    console.log('Client connected');
-    
-    // Send a test event to verify connection
+    console.log('Client connected:', socket.id);
+
+    // Send a connection confirmation
     socket.emit('connection_established', { message: 'Connected to server' });
-    
-    // Handle long-queued workflow events from clients
-    socket.on('long-queued-workflow', (data) => {
-      console.log('Received long-queued-workflow event from client:', data);
-      
-      // Broadcast the event to all clients (including the sender)
-      io.emit('long-queued-workflow', data);
-      console.log('Broadcasted long-queued-workflow event to all clients');
-    });
-    
+
+    // Note on long-queued-workflow:
+    // This event has been removed from Socket.IO communication entirely and is now
+    // handled purely on the client (see client/src/api/socketService.js for details).
+    // Clients cannot send or receive a 'long-queued-workflow' Socket.IO event, and the
+    // server does not emit it via io.emit().
+
     socket.on('disconnect', () => {
-      console.log('Client disconnected');
+      console.log('Client disconnected:', socket.id);
     });
   });
 

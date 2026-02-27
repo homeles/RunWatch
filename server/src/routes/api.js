@@ -3,7 +3,6 @@ import * as workflowController from '../controllers/workflowController.js';
 import { syncGitHubData, getAvailableOrganizations, getSyncHistory } from '../services/syncService.js';
 import { validateGitHubConfig } from '../utils/githubAuth.js';
 import SyncHistory from '../models/SyncHistory.js';
-
 const router = express.Router();
 
 // Health check endpoint
@@ -49,9 +48,12 @@ router.post('/workflow-runs/:runId/jobs', workflowController.updateWorkflowJobs)
 // Database status endpoint
 router.get('/db/status', workflowController.getDatabaseStatus);
 
-// Database backup routes
-router.get('/database/backup', workflowController.createBackup);
-router.post('/database/restore', workflowController.restoreBackup);
+// Database backup/restore — protected by admin token (ADMIN_API_TOKEN env var).
+// IP-based restriction is unreliable behind Docker/Nginx; use Bearer token or X-Admin-Token header.
+router.get('/database/backup', workflowController.requireAdminToken, workflowController.createBackup);
+// Restore uses a 100mb body limit (applied AFTER auth to prevent unauthenticated memory exhaustion).
+const restoreJsonParser = express.json({ limit: '100mb' });
+router.post('/database/restore', workflowController.requireAdminToken, restoreJsonParser, workflowController.restoreBackup);
 
 // Get available organizations
 router.get('/organizations', async (req, res) => {

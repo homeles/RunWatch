@@ -1,7 +1,53 @@
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 import WorkflowRun from '../models/WorkflowRun.js';
 import { successResponse, errorResponse } from '../utils/responseHandler.js';
 import * as workflowService from '../services/workflowService.js';
+
+// Middleware: restrict backup/restore endpoints to requests bearing a valid ADMIN_API_TOKEN.
+// IP-based allowlists are unreliable behind Docker/Nginx (backend sees the proxy's private IP,
+// not the originating client IP). A pre-shared token provides explicit, portable access control.
+//
+// Usage: set ADMIN_API_TOKEN to a long random secret in your .env file.
+// Pass it as: Authorization: Bearer <token>   OR   X-Admin-Token: <token>
+export const requireAdminToken = (req, res, next) => {
+  const adminToken = process.env.ADMIN_API_TOKEN;
+
+  if (!adminToken) {
+    // If no token is configured, fail closed — never allow access.
+    return res.status(503).json({ error: 'Admin access is not configured on this server.' });
+  }
+
+  const authHeader = req.headers['authorization'] || '';
+  const tokenHeader = req.headers['x-admin-token'] || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  const provided = bearerToken || tokenHeader;
+
+  if (!provided) {
+    return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
+  }
+
+  // Use constant-time comparison to prevent timing attacks.
+  // Hash both tokens to a fixed length (SHA-256) first to eliminate length-based timing leaks.
+  try {
+    const adminHash = crypto.createHash('sha256').update(adminToken).digest();
+    const providedHash = crypto.createHash('sha256').update(provided).digest();
+
+    if (!crypto.timingSafeEqual(adminHash, providedHash)) {
+      return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
+    }
+  } catch (err) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error during admin token verification:', err);
+    }
+    return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
+  }
+
+  next();
+};
+
+// Keep legacy alias for any existing route references — points to the new token-based guard.
+export const requireLocalhost = requireAdminToken;
 
 export const handleWorkflowRun = async (req, res) => {
   try {
@@ -15,16 +61,24 @@ export const handleWorkflowRun = async (req, res) => {
 
 export const getAllWorkflowRuns = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 30;
-    const searchQuery = req.query.search || '';
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 30));
+    const searchQuery = req.query.search ? String(req.query.search).slice(0, 100) : '';
     const status = req.query.status || 'all';
     const skip = (page - 1) * pageSize;
+
+    // Validate status against known values to prevent unexpected query behavior
+    const validStatuses = ['all', 'in_progress', 'queued', 'waiting', 'pending', 'success', 'failure', 'cancelled', 'skipped', 'timed_out', 'action_required', 'stale', 'neutral', 'startup_failure'];
+    if (!validStatuses.includes(status)) {
+      return errorResponse(res, `Invalid status filter: ${status}`, 400);
+    }
 
     // Build the query with search and status filters
     let query = {};
     if (searchQuery) {
-      query['repository.fullName'] = { $regex: searchQuery, $options: 'i' };
+      // Escape regex special characters to prevent ReDoS
+      const escaped = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query['repository.fullName'] = { $regex: escaped, $options: 'i' };
     }
 
     // Add status filter
@@ -45,11 +99,17 @@ export const getAllWorkflowRuns = async (req, res) => {
     // Get the paginated repositories
     const paginatedRepos = distinctRepos.slice(skip, skip + pageSize);
 
-    // Then get workflow runs for these repositories
-    const workflowRuns = await WorkflowRun.find({
-      'repository.fullName': { $in: paginatedRepos },
-      ...query
-    }).sort({ 'run.created_at': -1 });
+    // Then get workflow runs for these repositories.
+    // Exclude the repository.fullName search regex from the final query — it was already
+    // used to derive paginatedRepos above. Including both $in and $regex on the same field
+    // would create conflicting conditions.
+    const { 'repository.fullName': _repoFilter, ...nonRepoFilters } = query;
+    const hasNonRepoFilters = Object.keys(nonRepoFilters).length > 0;
+    const finalQuery = hasNonRepoFilters
+      ? { $and: [{ 'repository.fullName': { $in: paginatedRepos } }, nonRepoFilters] }
+      : { 'repository.fullName': { $in: paginatedRepos } };
+
+    const workflowRuns = await WorkflowRun.find(finalQuery).sort({ 'run.created_at': -1 });
 
     return successResponse(res, {
       data: workflowRuns,

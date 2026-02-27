@@ -35,7 +35,7 @@ const lastUpdateTimes = new Map();
 const queuedWorkflows = new Map();
 
 // Load existing queued workflows from the server
-const loadExistingQueuedWorkflows = async (alertConfig = defaultAlertConfig) => {
+const loadExistingQueuedWorkflows = async (alertConfig = defaultAlertConfig, onLongQueuedWorkflow = null) => {
   try {
     console.log('Loading existing queued workflows from server...');
     const workflows = await apiService.getQueuedWorkflows();
@@ -59,7 +59,7 @@ const loadExistingQueuedWorkflows = async (alertConfig = defaultAlertConfig) => 
     // Run the check immediately after loading existing workflows
     if (queuedWorkflows.size > 0) {
       console.log('Running immediate check for long-queued workflows on load');
-      checkQueuedWorkflows(alertConfig);
+      checkQueuedWorkflows(alertConfig, onLongQueuedWorkflow);
     }
   } catch (error) {
     console.error('Error loading existing queued workflows:', error);
@@ -67,7 +67,7 @@ const loadExistingQueuedWorkflows = async (alertConfig = defaultAlertConfig) => 
 };
 
 // Function to check if a workflow has been queued for too long
-const checkQueuedWorkflows = (alertConfig = defaultAlertConfig) => {
+const checkQueuedWorkflows = (alertConfig = defaultAlertConfig, onLongQueuedWorkflow = null) => {
   const threshold = alertConfig?.queuedTimeAlertThreshold || defaultAlertConfig.queuedTimeAlertThreshold;
   const now = new Date();
 
@@ -86,21 +86,19 @@ const checkQueuedWorkflows = (alertConfig = defaultAlertConfig) => {
       
       console.log(`ALERT: Workflow ${workflow.name} exceeded queue threshold (${queuedMinutes.toFixed(2)} minutes)`);
 
-      // Emit an event for the long-queued workflow
-      socket.emit('long-queued-workflow', {
+      const eventData = {
         workflow: workflow.name,
         repository: workflow.repository,
         queuedMinutes: Math.floor(queuedMinutes),
         id: id
-      });
+      };
+
+      // Invoke the callback directly — do NOT emit to server (untrusted client broadcasts are disabled)
+      if (onLongQueuedWorkflow) {
+        onLongQueuedWorkflow(eventData);
+      }
       
-      // Debug: Also log the emitted event data
-      console.log('Emitted long-queued-workflow event:', {
-        workflow: workflow.name,
-        repository: workflow.repository,
-        queuedMinutes: Math.floor(queuedMinutes),
-        id: id
-      });
+      console.log('Long-queued-workflow alert fired:', eventData);
     }
   });
 };
@@ -112,7 +110,7 @@ export const setupSocketListeners = (callbacks) => {
   const alertConfig = callbacks.alertConfig || defaultAlertConfig;
   
   // Load existing queued workflows when initializing and pass alert config
-  loadExistingQueuedWorkflows(alertConfig);
+  loadExistingQueuedWorkflows(alertConfig, callbacks.onLongQueuedWorkflow);
   
   const handleUpdate = (eventName, data, callback) => {
     const lastUpdate = lastUpdateTimes.get(data.run.id) || 0;
@@ -192,19 +190,16 @@ export const setupSocketListeners = (callbacks) => {
   });
 
   // Setup the queue time monitoring
-  const queueMonitorInterval = setInterval(() => checkQueuedWorkflows(alertConfig), 30000); // Check every 30 seconds
+  const queueMonitorInterval = setInterval(() => checkQueuedWorkflows(alertConfig, callbacks.onLongQueuedWorkflow), 30000); // Check every 30 seconds
   
-  // Setup listener for long-queued workflow events (for notifications)
-  if (callbacks.onLongQueuedWorkflow) {
-    socket.on('long-queued-workflow', callbacks.onLongQueuedWorkflow);
-  }
+  // Note: long-queued-workflow alerts are fired locally via checkQueuedWorkflows callback,
+  // not received from the server (client-to-server broadcasts are disabled for security).
 
   // Cleanup function
   return () => {
     socket.off('workflowUpdate');
     socket.off('workflow_update');
     socket.off('workflowJobsUpdate');
-    socket.off('long-queued-workflow');
     clearInterval(queueMonitorInterval);
     lastUpdateTimes.clear();
     queuedWorkflows.clear();
