@@ -67,6 +67,8 @@ app.use(cors({
 //   - Webhooks can legitimately burst from shared GitHub IP ranges
 //   - Sync endpoints have their own stricter limiter (10/min); applying both would
 //     mean the global 100/15min (~6.7/min effective) throttles before the intended 10/min
+// NOTE: When mounted on '/api', Express strips the prefix — req.path is relative to the
+// mount point (e.g., '/webhooks/github' not '/api/webhooks/github').
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,

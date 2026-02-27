@@ -27,11 +27,13 @@ export const requireAdminToken = (req, res, next) => {
     return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
   }
 
-  // Use constant-time comparison to prevent timing attacks
+  // Use constant-time comparison to prevent timing attacks.
+  // Hash both tokens to a fixed length (SHA-256) first to eliminate length-based timing leaks.
   try {
-    const adminBuf = Buffer.from(adminToken);
-    const providedBuf = Buffer.from(provided);
-    if (adminBuf.length !== providedBuf.length || !crypto.timingSafeEqual(adminBuf, providedBuf)) {
+    const adminHash = crypto.createHash('sha256').update(adminToken).digest();
+    const providedHash = crypto.createHash('sha256').update(provided).digest();
+
+    if (!crypto.timingSafeEqual(adminHash, providedHash)) {
       return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
     }
   } catch {
@@ -89,11 +91,13 @@ export const getAllWorkflowRuns = async (req, res) => {
     const paginatedRepos = distinctRepos.slice(skip, skip + pageSize);
 
     // Then get workflow runs for these repositories.
-    // Only use $and when there are additional search/status filters — an empty object
-    // in $and is valid but wasteful and can confuse query analysis.
-    const hasFilters = Object.keys(query).length > 0;
-    const finalQuery = hasFilters
-      ? { $and: [{ 'repository.fullName': { $in: paginatedRepos } }, query] }
+    // Exclude the repository.fullName search regex from the final query — it was already
+    // used to derive paginatedRepos above. Including both $in and $regex on the same field
+    // would create conflicting conditions.
+    const { 'repository.fullName': _repoFilter, ...nonRepoFilters } = query;
+    const hasNonRepoFilters = Object.keys(nonRepoFilters).length > 0;
+    const finalQuery = hasNonRepoFilters
+      ? { $and: [{ 'repository.fullName': { $in: paginatedRepos } }, nonRepoFilters] }
       : { 'repository.fullName': { $in: paginatedRepos } };
 
     const workflowRuns = await WorkflowRun.find(finalQuery).sort({ 'run.created_at': -1 });

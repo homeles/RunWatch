@@ -37,6 +37,9 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 5001
       # Application connects with a least-privilege user (not the root admin)
+      # NOTE: If MONGO_APP_USERNAME or MONGO_APP_PASSWORD contain URI-reserved characters
+      # (such as @, :, /, ?, #, [, ], or %), they must be percent-encoded in .env,
+      # otherwise the MongoDB connection string will break.
       MONGODB_URI: mongodb://${MONGO_APP_USERNAME:?MONGO_APP_USERNAME must be set in .env}:${MONGO_APP_PASSWORD:?MONGO_APP_PASSWORD must be set in .env}@mongodb:27017/runwatch?authSource=runwatch
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
       CLIENT_URL: ${CLIENT_URL:?CLIENT_URL must be set in .env}
