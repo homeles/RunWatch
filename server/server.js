@@ -62,7 +62,7 @@ app.use(cors({
   credentials: true
 }));
 
-// Global rate limiter — 100 requests per 15 minutes per IP
+// Global rate limiter — 300 requests per 15 minutes per IP
 // GitHub webhooks and sync endpoints are excluded from the global limiter:
 //   - Webhooks can legitimately burst from shared GitHub IP ranges
 //   - Sync endpoints have their own stricter limiter (10/min); applying both would
@@ -71,7 +71,7 @@ app.use(cors({
 // mount point (e.g., '/webhooks/github' not '/api/webhooks/github').
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' },
