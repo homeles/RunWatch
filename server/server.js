@@ -62,16 +62,16 @@ app.use(cors({
   credentials: true
 }));
 
-// Global rate limiter — 300 requests per 15 minutes per IP
+// Global rate limiter — 1000 requests per 15 minutes per IP
 // GitHub webhooks and sync endpoints are excluded from the global limiter:
 //   - Webhooks can legitimately burst from shared GitHub IP ranges
 //   - Sync endpoints have their own stricter limiter (10/min); applying both would
-//     mean the global 100/15min (~6.7/min effective) throttles before the intended 10/min
+//     mean the global limiter throttling before the intended 10/min
 // NOTE: When mounted on '/api', Express strips the prefix — req.path is relative to the
 // mount point (e.g., '/webhooks/github' not '/api/webhooks/github').
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' },
