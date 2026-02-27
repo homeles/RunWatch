@@ -11,12 +11,27 @@ if (!appUsername || !appPassword) {
 
 db = db.getSiblingDB('runwatch');
 
-db.createUser({
-  user: appUsername,
-  pwd: appPassword,
-  roles: [
-    { role: 'readWrite', db: 'runwatch' }
-  ]
-});
-
-print(`Created app user '${appUsername}' with readWrite on 'runwatch'`);
+// Use updateUser if it already exists, otherwise createUser.
+// This makes the init script idempotent (safe to re-run).
+try {
+  db.createUser({
+    user: appUsername,
+    pwd: appPassword,
+    roles: [
+      { role: 'readWrite', db: 'runwatch' }
+    ]
+  });
+  print(`Created app user '${appUsername}' with readWrite on 'runwatch'`);
+} catch (e) {
+  if (e.codeName === 'DuplicateKey' || (e.message && e.message.includes('already exists'))) {
+    db.updateUser(appUsername, {
+      pwd: appPassword,
+      roles: [
+        { role: 'readWrite', db: 'runwatch' }
+      ]
+    });
+    print(`Updated existing app user '${appUsername}'`);
+  } else {
+    throw e;
+  }
+}

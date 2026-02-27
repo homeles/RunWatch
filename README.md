@@ -69,7 +69,8 @@ The application is structured as follows:
    PORT=5001                     # Port where the backend server will run
    # NOTE: dotenv does not expand variables — use a literal connection string here.
    # The app connects as MONGO_APP_USERNAME (least-privilege), not the root admin.
-   MONGODB_URI=mongodb://runwatch_app:yourapppassword@mongodb:27017/runwatch?authSource=runwatch
+   # Replace the placeholders below with the literal values from MONGO_APP_USERNAME / MONGO_APP_PASSWORD.
+   MONGODB_URI=mongodb://<MONGO_APP_USERNAME>:<MONGO_APP_PASSWORD>@mongodb:27017/runwatch?authSource=runwatch
 
    # MongoDB Root Credentials (used by docker-compose to initialise the DB)
    MONGO_ROOT_USERNAME=runwatch_admin
@@ -182,7 +183,7 @@ RunWatch ships with several security controls enabled by default:
 | Control | Details |
 |---|---|
 | **HTTP security headers** | `helmet` middleware sets `X-Content-Type-Options`, `X-Frame-Options`, HSTS, CSP, and more |
-| **CORS allowlist** | Only `CLIENT_URL` (and `localhost:3000` in development) are trusted; all other origins are rejected |
+| **CORS allowlist** | Only `CLIENT_URL` (and `localhost:3000` in development) are trusted; all other origins are rejected. `CLIENT_URL` is **required** in production — server refuses to start without it |
 | **Rate limiting** | 100 req / 15 min globally per IP; 10 req / min on sync endpoints; GitHub webhook route is exempt |
 | **MongoDB authentication** | Username + password required; port not exposed to the host network |
 | **Admin token for backup/restore** | `/api/database/backup` and `/api/database/restore` require `Authorization: Bearer <ADMIN_API_TOKEN>` or `X-Admin-Token: <token>` |
@@ -254,7 +255,7 @@ The application can be deployed using Docker and Docker Compose. This will creat
    MONGO_ROOT_PASSWORD=<strong root password>
    MONGO_APP_USERNAME=runwatch_app
    MONGO_APP_PASSWORD=<strong app password>
-   MONGODB_URI=mongodb://runwatch_app:<app password>@mongodb:27017/runwatch?authSource=runwatch
+   MONGODB_URI=mongodb://<MONGO_APP_USERNAME>:<MONGO_APP_PASSWORD>@mongodb:27017/runwatch?authSource=runwatch
    ADMIN_API_TOKEN=<openssl rand -hex 32>
    GITHUB_WEBHOOK_SECRET=<your webhook secret>
    GITHUB_APP_ID=<your app id>

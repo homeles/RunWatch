@@ -39,11 +39,16 @@ app.use(helmet());
 // for rate limiting and other IP-dependent logic.
 app.set('trust proxy', 1);
 
-// CORS - restrict to allowed origins only
-// localhost:3000 is only included in non-production to avoid expanding trusted origins in prod.
+// CORS - restrict to allowed origins only.
+// In production, CLIENT_URL is required — same enforcement as Socket.IO (socket.js line 7-9).
+// In development, http://localhost:3000 is also allowed for local frontend dev server.
+const isProduction = process.env.NODE_ENV === 'production';
+if (isProduction && !process.env.CLIENT_URL) {
+  throw new Error('CORS configuration error: CLIENT_URL must be set in production.');
+}
 const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost',
-  ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000'] : [])
+  ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ['http://localhost']),
+  ...(!isProduction ? ['http://localhost:3000'] : [])
 ];
 app.use(cors({
   origin: (origin, callback) => {
@@ -138,7 +143,7 @@ app.post('/api/webhooks/github', async (req, res) => {
     console.error('Webhook verification or processing failed:', error);
     res.status(400).json({ 
       error: 'Webhook verification failed',
-      message: error.message
+      ...(process.env.NODE_ENV !== 'production' && { message: error.message })
     });
   }
 });
@@ -173,7 +178,8 @@ app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({
     error: 'Internal Server Error',
-    message: err.message
+    // Only expose error details in development to prevent information disclosure
+    ...(process.env.NODE_ENV !== 'production' && { message: err.message })
   });
 });
 

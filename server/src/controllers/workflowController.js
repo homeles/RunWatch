@@ -89,14 +89,14 @@ export const getAllWorkflowRuns = async (req, res) => {
     const paginatedRepos = distinctRepos.slice(skip, skip + pageSize);
 
     // Then get workflow runs for these repositories.
-    // Use $and to combine the $in (pagination) constraint with any search/status filters
-    // so that spreading ...query does not overwrite the 'repository.fullName' $in condition.
-    const workflowRuns = await WorkflowRun.find({
-      $and: [
-        { 'repository.fullName': { $in: paginatedRepos } },
-        query
-      ]
-    }).sort({ 'run.created_at': -1 });
+    // Only use $and when there are additional search/status filters — an empty object
+    // in $and is valid but wasteful and can confuse query analysis.
+    const hasFilters = Object.keys(query).length > 0;
+    const finalQuery = hasFilters
+      ? { $and: [{ 'repository.fullName': { $in: paginatedRepos } }, query] }
+      : { 'repository.fullName': { $in: paginatedRepos } };
+
+    const workflowRuns = await WorkflowRun.find(finalQuery).sort({ 'run.created_at': -1 });
 
     return successResponse(res, {
       data: workflowRuns,
