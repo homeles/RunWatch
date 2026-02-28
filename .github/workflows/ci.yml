@@ -260,13 +260,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🔗 Validate docker-compose
-        run: docker compose config -q
-
-      - name: 🚀 Start services
+      - name: 📝 Create CI environment
         run: |
-          # Create minimal .env for CI
-          cat > .env <<EOF
+          cat > .env << 'EOF'
           MONGO_ROOT_USERNAME=admin
           MONGO_ROOT_PASSWORD=testpassword123
           MONGO_APP_USERNAME=runwatch_app
@@ -275,18 +271,20 @@ jobs:
           GITHUB_WEBHOOK_SECRET=test
           CLIENT_URL=http://localhost
           ADMIN_API_TOKEN=ci-test-token
-          MONGODB_URI=mongodb://runwatch_app:testpassword123@mongodb:27017/runwatch?authSource=runwatch
           NODE_ENV=production
           REACT_APP_API_URL=http://localhost/api
           REACT_APP_WEBSOCKET_URL=ws://localhost
-          GITHUB_APP_PRIVATE_KEY_PATH=/dev/null
+          GITHUB_APP_PRIVATE_KEY_PATH=/tmp/dummy-key.pem
           EOF
-
-          # Create dummy private key for CI
+          # Trim leading whitespace from heredoc
+          sed -i 's/^[[:space:]]*//' .env
           touch /tmp/dummy-key.pem
-          export GITHUB_APP_PRIVATE_KEY_PATH=/tmp/dummy-key.pem
 
-          docker compose up -d --build --wait --wait-timeout 120 2>&1 || true
+      - name: 🔗 Validate docker-compose
+        run: docker compose config -q
+
+      - name: 🚀 Start services
+        run: docker compose up -d --build --wait --wait-timeout 120 2>&1 || true
 
       - name: 🏥 Health checks
         run: |
@@ -322,7 +320,7 @@ jobs:
 
       - name: 🧹 Cleanup
         if: always()
-        run: docker compose down -v
+        run: docker compose down -v 2>/dev/null || true
 
   # ── Summary ────────────────────────────────────────────────
   ci-status:
