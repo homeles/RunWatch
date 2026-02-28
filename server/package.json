@@ -16,8 +16,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@octokit/auth-app": "^4.0.13",
-    "@octokit/rest": "^19.0.13",
+    "@octokit/auth-app": "^8.2.0",
+    "@octokit/rest": "^22.0.1",
     "@octokit/webhooks": "^13.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
