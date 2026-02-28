@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────────────────────
+# RunWatch — CodeQL Security Analysis
+# Deep security scanning for JavaScript vulnerabilities
+# ─────────────────────────────────────────────────────────────
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6AM UTC
+
+permissions:
+  security-events: write
+  contents: read
+
+jobs:
+  analyze:
+    name: 🛡️ CodeQL Analysis
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          queries: +security-extended
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v4
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
