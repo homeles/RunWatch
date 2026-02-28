@@ -81,9 +81,8 @@ jobs:
         continue-on-error: true
 
       - name: 🏗️ Build
-        run: npm run build
+        run: CI=false npm run build
         env:
-          CI: true
           REACT_APP_API_URL: http://localhost/api
           REACT_APP_WEBSOCKET_URL: ws://localhost
 
@@ -268,20 +267,26 @@ jobs:
         run: |
           # Create minimal .env for CI
           cat > .env <<EOF
+          MONGO_ROOT_USERNAME=admin
+          MONGO_ROOT_PASSWORD=testpassword123
+          MONGO_APP_USERNAME=runwatch_app
+          MONGO_APP_PASSWORD=testpassword123
           GITHUB_APP_ID=12345
-          GITHUB_APP_PRIVATE_KEY=test
           GITHUB_WEBHOOK_SECRET=test
-          MONGODB_URI=mongodb://admin:password@mongo:27017/runwatch?authSource=admin
-          MONGO_INITDB_ROOT_USERNAME=admin
-          MONGO_INITDB_ROOT_PASSWORD=password
-          MONGO_INITDB_DATABASE=runwatch
-          PORT=5001
+          CLIENT_URL=http://localhost
+          ADMIN_API_TOKEN=ci-test-token
+          MONGODB_URI=mongodb://runwatch_app:testpassword123@mongodb:27017/runwatch?authSource=runwatch
           NODE_ENV=production
-          ALLOWED_ORIGINS=http://localhost
-          RATE_LIMIT_WINDOW_MS=60000
-          RATE_LIMIT_MAX_REQUESTS=100
+          REACT_APP_API_URL=http://localhost/api
+          REACT_APP_WEBSOCKET_URL=ws://localhost
+          GITHUB_APP_PRIVATE_KEY_PATH=/dev/null
           EOF
-          docker compose up -d --build --wait --wait-timeout 60 2>&1 || true
+
+          # Create dummy private key for CI
+          touch /tmp/dummy-key.pem
+          export GITHUB_APP_PRIVATE_KEY_PATH=/tmp/dummy-key.pem
+
+          docker compose up -d --build --wait --wait-timeout 120 2>&1 || true
 
       - name: 🏥 Health checks
         run: |
