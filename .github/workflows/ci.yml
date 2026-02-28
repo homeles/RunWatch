@@ -9,6 +9,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -31,6 +32,7 @@ jobs:
       client: ${{ steps.filter.outputs.client }}
       server: ${{ steps.filter.outputs.server }}
       docker: ${{ steps.filter.outputs.docker }}
+      workflows: ${{ steps.filter.outputs.workflows }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -46,12 +48,14 @@ jobs:
             docker:
               - '**/Dockerfile'
               - 'docker-compose.yml'
+            workflows:
+              - '.github/workflows/**'
 
   # ── Client Pipeline ────────────────────────────────────────
   client-build:
     name: 🖥️ Client — Build & Lint
     needs: changes
-    if: needs.changes.outputs.client == 'true' || github.event_name == 'push'
+    if: needs.changes.outputs.client == 'true' || needs.changes.outputs.workflows == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -114,7 +118,7 @@ jobs:
   client-test:
     name: 🧪 Client — Tests
     needs: changes
-    if: needs.changes.outputs.client == 'true' || github.event_name == 'push'
+    if: needs.changes.outputs.client == 'true' || needs.changes.outputs.workflows == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -152,7 +156,7 @@ jobs:
   server-build:
     name: ⚙️ Server — Validate & Lint
     needs: changes
-    if: needs.changes.outputs.server == 'true' || github.event_name == 'push'
+    if: needs.changes.outputs.server == 'true' || needs.changes.outputs.workflows == 'true' || github.event_name == 'push'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -225,7 +229,7 @@ jobs:
   docker:
     name: 🐳 Docker Build
     needs: [changes, client-build, server-build]
-    if: always() && (needs.changes.outputs.docker == 'true' || github.event_name == 'push')
+    if: always() && (needs.changes.outputs.docker == 'true' || needs.changes.outputs.workflows == 'true' || github.event_name == 'push')
     runs-on: ubuntu-latest
     strategy:
       matrix:
