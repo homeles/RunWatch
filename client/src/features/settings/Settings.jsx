@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -28,6 +28,8 @@ import apiService from '../../api/apiService';
 import { socket } from '../../api/socketService';
 import { formatDistanceToNow } from 'date-fns';
 import SyncHistoryDetails from './SyncHistoryDetails';
+import { useAdminToken } from '../../common/context/AdminTokenContext';
+import AdminTokenDialog from '../../common/components/AdminTokenDialog';
 
 const Settings = () => {
   const [syncing, setSyncing] = useState(false);
@@ -47,6 +49,10 @@ const Settings = () => {
   const [dbStatus, setDbStatus] = useState(null);
   const [restoreMessage, setRestoreMessage] = useState(null);
   const [restoreMessageType, setRestoreMessageType] = useState('success');
+  const { token: adminToken, setToken: setAdminToken } = useAdminToken();
+  const [showTokenDialog, setShowTokenDialog] = useState(false);
+  const [tokenError, setTokenError] = useState('');
+  const [pendingAction, setPendingAction] = useState(null); // 'backup' or { type: 'restore', event }
   
   const fetchActiveSync = async () => {
     try {
@@ -196,9 +202,39 @@ const Settings = () => {
     setSelectedSync(sync);
   };
 
-  const handleCreateBackup = async () => {
+  const requireToken = useCallback((action) => {
+    if (adminToken) return true;
+    setPendingAction(action);
+    setTokenError('');
+    setShowTokenDialog(true);
+    return false;
+  }, [adminToken]);
+
+  const handleTokenSubmit = useCallback((newToken) => {
+    setAdminToken(newToken);
+    setShowTokenDialog(false);
+    setTokenError('');
+    // Execute pending action after token is set
+    const action = pendingAction;
+    setPendingAction(null);
+    if (action === 'backup') {
+      executeBackup(newToken);
+    } else if (action?.type === 'restore') {
+      executeRestore(action.event, newToken);
+    }
+  }, [pendingAction, setAdminToken]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const getAuthErrorMessage = (err) => {
+    const status = err?.response?.status;
+    if (status === 401) return 'Invalid or missing admin token. Please re-enter your token.';
+    if (status === 503) return 'Admin token is not configured on the server. Set ADMIN_API_TOKEN env var.';
+    return err.message;
+  };
+
+  const executeBackup = async (tokenOverride) => {
+    const tkn = tokenOverride || adminToken;
     try {
-      const response = await apiService.createDatabaseBackup();
+      const response = await apiService.createDatabaseBackup(tkn);
       const backupData = JSON.stringify(response.data);
       const blob = new Blob([backupData], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
@@ -213,15 +249,28 @@ const Settings = () => {
       setRestoreMessage('Database backup created successfully');
       setRestoreMessageType('success');
     } catch (err) {
-      setRestoreMessage('Failed to create database backup: ' + err.message);
+      if (err?.response?.status === 401) {
+        setAdminToken(''); // Clear invalid token
+        setTokenError(getAuthErrorMessage(err));
+        setPendingAction('backup');
+        setShowTokenDialog(true);
+        return;
+      }
+      setRestoreMessage(getAuthErrorMessage(err));
       setRestoreMessageType('error');
       console.error(err);
     }
   };
 
-  const handleRestoreBackup = async (event) => {
+  const handleCreateBackup = async () => {
+    if (!requireToken('backup')) return;
+    executeBackup();
+  };
+
+  const executeRestore = async (event, tokenOverride) => {
+    const tkn = tokenOverride || adminToken;
     try {
-      const file = event.target.files[0];
+      const file = event.target?.files?.[0];
       if (!file) return;
 
       setRestoreMessage('Restoring database...');
@@ -231,7 +280,7 @@ const Settings = () => {
       reader.onload = async (e) => {
         try {
           const backupData = JSON.parse(e.target.result);
-          const response = await apiService.restoreDatabaseBackup(backupData);
+          const response = await apiService.restoreDatabaseBackup(backupData, tkn);
           
           // Refresh database status after restore
           await fetchDatabaseStatus();
@@ -246,7 +295,14 @@ const Settings = () => {
           setRestoreMessageType(response.data.stats.errors.length > 0 ? 'warning' : 'success');
           setError(null);
         } catch (err) {
-          setRestoreMessage('Failed to restore database: ' + err.message);
+          if (err?.response?.status === 401) {
+            setAdminToken(''); // Clear invalid token
+            setTokenError(getAuthErrorMessage(err));
+            setPendingAction({ type: 'restore', event });
+            setShowTokenDialog(true);
+            return;
+          }
+          setRestoreMessage(getAuthErrorMessage(err));
           setRestoreMessageType('error');
           console.error(err);
         }
@@ -257,6 +313,11 @@ const Settings = () => {
       setRestoreMessageType('error');
       console.error(err);
     }
+  };
+
+  const handleRestoreBackup = async (event) => {
+    if (!requireToken({ type: 'restore', event })) return;
+    executeRestore(event);
   };
 
   if (loading) {
@@ -682,6 +743,12 @@ const Settings = () => {
       <SyncHistoryDetails 
         sync={selectedSync} 
         onClose={() => setSelectedSync(null)} 
+      />
+          <AdminTokenDialog
+        open={showTokenDialog}
+        onClose={() => { setShowTokenDialog(false); setPendingAction(null); }}
+        onSubmit={handleTokenSubmit}
+        error={tokenError}
       />
     </Box>
   );

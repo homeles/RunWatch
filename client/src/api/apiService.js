@@ -191,15 +191,23 @@ const apiService = {
     }
   },
   
-  // Create database backup
-  async createDatabaseBackup() {
-    const response = await api.get(`${API_URL}/database/backup`);
+  // Create database backup (requires admin token)
+  async createDatabaseBackup(adminToken) {
+    const headers = {};
+    if (adminToken) {
+      headers['Authorization'] = `Bearer ${adminToken}`;
+    }
+    const response = await api.get(`${API_URL}/database/backup`, { headers });
     return response.data;
   },
 
-  // Restore database backup
-  async restoreDatabaseBackup(backupData) {
-    const response = await api.post(`${API_URL}/database/restore`, backupData);
+  // Restore database backup (requires admin token)
+  async restoreDatabaseBackup(backupData, adminToken) {
+    const headers = {};
+    if (adminToken) {
+      headers['Authorization'] = `Bearer ${adminToken}`;
+    }
+    const response = await api.post(`${API_URL}/database/restore`, backupData, { headers });
     return response.data;
   },
 
