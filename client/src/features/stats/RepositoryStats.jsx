@@ -156,6 +156,40 @@ const RepositoryStats = () => {
     fetchStats();
   }, []);
 
+  // Recent activity trend — uses actual run dates from recentRuns
+  const trendData = React.useMemo(() => {
+    if (!stats?.recentRuns) return { labels: [], datasets: [] };
+    const today = new Date();
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(today.getDate() - (6 - i));
+      return d.toISOString().split('T')[0];
+    });
+
+    const timeLabels = days.map(date =>
+      new Date(date).toLocaleDateString('en-US', { weekday: 'short' })
+    );
+
+    const recentRuns = stats.recentRuns || [];
+    const counts = days.map(date =>
+      recentRuns.filter(r => r.run?.created_at?.startsWith(date)).length
+    );
+
+    return {
+      labels: timeLabels,
+      datasets: [
+        {
+          label: 'Workflow Activity',
+          data: counts,
+          borderColor: 'rgba(88, 166, 255, 1)',
+          backgroundColor: 'rgba(88, 166, 255, 0.5)',
+          tension: 0.4,
+          fill: true,
+        }
+      ],
+    };
+  }, [stats]);
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
@@ -224,40 +258,6 @@ const RepositoryStats = () => {
       },
     ],
   };
-
-  // Recent activity trend — uses actual run dates from recentRuns
-  const trendData = React.useMemo(() => {
-    const today = new Date();
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setDate(today.getDate() - (6 - i));
-      return d.toISOString().split('T')[0];
-    });
-
-    const timeLabels = days.map(date =>
-      new Date(date).toLocaleDateString('en-US', { weekday: 'short' })
-    );
-
-    // Count runs per day from recentRuns (if available) — otherwise zeros
-    const recentRuns = stats.recentRuns || [];
-    const counts = days.map(date =>
-      recentRuns.filter(r => r.run?.created_at?.startsWith(date)).length
-    );
-
-    return {
-      labels: timeLabels,
-      datasets: [
-        {
-          label: 'Workflow Activity',
-          data: counts,
-          borderColor: 'rgba(88, 166, 255, 1)',
-          backgroundColor: 'rgba(88, 166, 255, 0.5)',
-          tension: 0.4,
-          fill: true,
-        }
-      ],
-    };
-  }, [stats.recentRuns]);
 
   return (
     <Box sx={{ pb: 6 }}>
