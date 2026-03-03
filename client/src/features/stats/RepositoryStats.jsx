@@ -33,6 +33,7 @@ import {
 } from 'chart.js';
 import { Bar, Pie, Line } from 'react-chartjs-2';
 import apiService from '../../api/apiService';
+import { formatDuration } from '../../common/utils/statusHelpers';
 import { useNavigate } from 'react-router-dom';
 
 // Register ChartJS components
@@ -100,7 +101,7 @@ const RepositoryStats = () => {
     const successData = orgLabels.map(org => orgStats[org].successfulRuns);
     const failureData = orgLabels.map(org => orgStats[org].failedRuns);
     const successRates = orgLabels.map(org => 
-      (orgStats[org].successfulRuns / orgStats[org].totalRuns * 100).toFixed(1)
+      orgStats[org].totalRuns ? (orgStats[org].successfulRuns / orgStats[org].totalRuns * 100).toFixed(1) : 0
     );
 
     return {
@@ -224,27 +225,39 @@ const RepositoryStats = () => {
     ],
   };
 
-  // Recent activity trend simulation
-  const today = new Date();
-  const timeLabels = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(today.getDate() - (6 - i));
-    return d.toLocaleDateString('en-US', { weekday: 'short' });
-  });
+  // Recent activity trend — uses actual run dates from recentRuns
+  const trendData = React.useMemo(() => {
+    const today = new Date();
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(today.getDate() - (6 - i));
+      return d.toISOString().split('T')[0];
+    });
 
-  const trendData = {
-    labels: timeLabels,
-    datasets: [
-      {
-        label: 'Workflow Activity',
-        data: timeLabels.map(() => Math.floor(Math.random() * (stats.totalRuns / 7)) + 1),
-        borderColor: 'rgba(88, 166, 255, 1)',
-        backgroundColor: 'rgba(88, 166, 255, 0.5)',
-        tension: 0.4,
-        fill: true,
-      }
-    ],
-  };
+    const timeLabels = days.map(date =>
+      new Date(date).toLocaleDateString('en-US', { weekday: 'short' })
+    );
+
+    // Count runs per day from recentRuns (if available) — otherwise zeros
+    const recentRuns = stats.recentRuns || [];
+    const counts = days.map(date =>
+      recentRuns.filter(r => r.run?.created_at?.startsWith(date)).length
+    );
+
+    return {
+      labels: timeLabels,
+      datasets: [
+        {
+          label: 'Workflow Activity',
+          data: counts,
+          borderColor: 'rgba(88, 166, 255, 1)',
+          backgroundColor: 'rgba(88, 166, 255, 0.5)',
+          tension: 0.4,
+          fill: true,
+        }
+      ],
+    };
+  }, [stats.recentRuns]);
 
   return (
     <Box sx={{ pb: 6 }}>
@@ -362,7 +375,7 @@ const RepositoryStats = () => {
         </Grid>
 
         {/* Success Rates by Organization */}
-        <Grid item xs={12}>
+        <Grid item xs={12} md={6}>
           <Paper elevation={0} sx={{ 
             p: 3,
             bgcolor: '#161B22',
@@ -404,6 +417,43 @@ const RepositoryStats = () => {
           </Paper>
         </Grid>
 
+        {/* Weekly Activity Trend */}
+        <Grid item xs={12} md={6}>
+          <Paper elevation={0} sx={{ 
+            p: 3,
+            bgcolor: '#161B22',
+            borderRadius: '12px',
+            border: '1px solid rgba(240, 246, 252, 0.1)'
+          }}>
+            <Typography variant="h6" sx={{ color: '#E6EDF3', mb: 3 }}>
+              Weekly Activity Trend
+            </Typography>
+            <Box sx={{ height: 300 }}>
+              <Line
+                data={trendData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { display: false }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      grid: { color: 'rgba(240, 246, 252, 0.1)' },
+                      ticks: { color: '#8B949E' }
+                    },
+                    x: {
+                      grid: { color: 'rgba(240, 246, 252, 0.1)' },
+                      ticks: { color: '#8B949E' }
+                    }
+                  }
+                }}
+              />
+            </Box>
+          </Paper>
+        </Grid>
+
         {/* Organization Details */}
         {stats.orgStats && Object.entries(stats.orgStats).map(([orgName, orgData]) => (
           <Grid item xs={12} key={orgName}>
@@ -433,7 +483,7 @@ const RepositoryStats = () => {
                         Success Rate
                       </Typography>
                       <Typography variant="h6" sx={{ color: '#23C562' }}>
-                        {(orgData.successfulRuns / orgData.totalRuns * 100).toFixed(1)}%
+                        {orgData.totalRuns ? (orgData.successfulRuns / orgData.totalRuns * 100).toFixed(1) : 0}%
                       </Typography>
                     </CardContent>
                   </Card>
@@ -509,7 +559,7 @@ const RepositoryStats = () => {
                         <Box>
                           <Typography variant="body2" sx={{ color: '#8B949E' }}>Success Rate</Typography>
                           <Typography sx={{ color: '#23C562' }}>
-                            {(repo.successfulRuns / repo.totalRuns * 100).toFixed(1)}%
+                            {repo.totalRuns ? (repo.successfulRuns / repo.totalRuns * 100).toFixed(1) : 0}%
                           </Typography>
                         </Box>
                         <Box>
@@ -535,13 +585,6 @@ const RepositoryStats = () => {
       </Grid>
     </Box>
   );
-};
-
-const formatDuration = (duration) => {
-  if (!duration) return 'N/A';
-  const minutes = Math.floor(duration / 60);
-  const seconds = duration % 60;
-  return `${minutes}m ${seconds}s`;
 };
 
 export default RepositoryStats;
