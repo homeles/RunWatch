@@ -2,7 +2,7 @@ name: Deploy Demo to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, demo]
     paths:
       - 'client/**'
       - '.github/workflows/deploy-demo.yml'
@@ -32,6 +32,7 @@ jobs:
           fetch-depth: 0
 
       - name: Sync main into demo
+        if: github.ref != 'refs/heads/demo'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -61,6 +62,7 @@ jobs:
         env:
           REACT_APP_DEMO_MODE: 'true'
           PUBLIC_URL: '/RunWatch'
+          CI: 'false'
         run: npm run build
 
       - name: Upload artifact
