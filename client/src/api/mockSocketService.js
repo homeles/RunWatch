@@ -24,4 +24,5 @@ export const setupSocketListeners = (callbacks) => {
   };
 };
 
-export default { socket, setupSocketListeners };
+const mockSocketExports = { socket, setupSocketListeners };
+export default mockSocketExports;

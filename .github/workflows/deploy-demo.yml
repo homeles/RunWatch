@@ -62,6 +62,7 @@ jobs:
         env:
           REACT_APP_DEMO_MODE: 'true'
           PUBLIC_URL: '/RunWatch'
+          CI: 'false'
         run: npm run build
 
       - name: Upload artifact

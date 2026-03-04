@@ -214,7 +214,8 @@ export const setupSocketListeners = (callbacks) => {
   };
 };
 
-export default {
+const realSocketExports = {
   socket,
   setupSocketListeners
 };
+export default realSocketExports;

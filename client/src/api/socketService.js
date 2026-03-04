@@ -10,4 +10,5 @@ export const socket = active.socket;
 export const setupSocketListeners = active.setupSocketListeners;
 export const defaultAlertConfig = isDemoMode ? {} : (realSocket.defaultAlertConfig || {});
 
-export default { socket, setupSocketListeners, defaultAlertConfig };
+const socketExports = { socket, setupSocketListeners, defaultAlertConfig };
+export default socketExports;

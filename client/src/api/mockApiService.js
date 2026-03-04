@@ -1,7 +1,7 @@
 // Mock API Service for RunWatch Demo Mode
 // Drop-in replacement for apiService — returns mock data with simulated latency
 
-import { allRuns, repos, workflows, computeWorkflowMetrics, computeJobMetrics, computeStats } from './mockData';
+import { allRuns, repos, computeWorkflowMetrics, computeJobMetrics, computeStats } from './mockData';
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms + Math.random() * 200));
 

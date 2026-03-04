@@ -3,7 +3,6 @@
 
 const now = new Date();
 const hour = (h) => new Date(now.getTime() - h * 3600000).toISOString();
-const min = (m) => new Date(now.getTime() - m * 60000).toISOString();
 
 // ── Repositories ──────────────────────────────────────────
 const repos = [
