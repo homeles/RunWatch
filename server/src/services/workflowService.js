@@ -53,10 +53,16 @@ export const processWorkflowRun = async (payload) => {
       status: run.status
     });
 
-    // Find existing run to preserve any existing labels if none provided
+    // Find existing run to preserve any existing labels and jobs if none provided
     const existingRun = await WorkflowRun.findOne({ 'run.id': run.id });
-    if (existingRun && !workflowRunData.run.labels.length && existingRun.run.labels?.length) {
-      workflowRunData.run.labels = existingRun.run.labels;
+    if (existingRun) {
+      if (!workflowRunData.run.labels.length && existingRun.run.labels?.length) {
+        workflowRunData.run.labels = existingRun.run.labels;
+      }
+      // Preserve existing jobs — workflow_run events don't carry job data
+      if (existingRun.jobs?.length) {
+        workflowRunData.jobs = existingRun.jobs;
+      }
     }
 
     // Use findOneAndUpdate with upsert to either update existing or create new
@@ -312,12 +318,16 @@ export const processWorkflowJobEvent = async (payload) => {
 
       return workflowRun;
     } else {
-      // If the run doesn't exist, create a new one with the job
+      // If the run doesn't exist, create a new one with the job.
+      // Note: workflow_job payloads lack run-level fields (head_branch, event, etc.),
+      // so we mark this as a partial record. The workflow_run event will fill in the rest.
+      workflowRunData.run.head_branch = workflow_job.head_branch || null;
+      workflowRunData.run.event = null; // Not available in workflow_job payload
       workflowRunData.jobs = [updatedJob];
       
       const workflowRun = await WorkflowRun.findOneAndUpdate(
         { 'run.id': workflow_job.run_id },
-        workflowRunData,
+        { $setOnInsert: workflowRunData },
         { 
           new: true,
           upsert: true,

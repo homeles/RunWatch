@@ -403,7 +403,7 @@ const WorkflowHistory = () => {
                         />
                       </TableCell>
                       <TableCell sx={{ color: '#E6EDF3' }}>
-                        #{workflow.run.number}
+                        {workflow.run.number ? `#${workflow.run.number}` : '#-'}
                       </TableCell>
                       <TableCell sx={{ color: '#E6EDF3' }}>
                         {workflow.run.head_branch || '-'}
