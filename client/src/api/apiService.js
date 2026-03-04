@@ -80,6 +80,16 @@ const apiService = {
     }
   },
 
+  deleteWorkflowRun: async (id) => {
+    try {
+      const response = await api.delete(`${API_URL}/workflow-runs/${id}`);
+      return response.data.data;
+    } catch (error) {
+      console.error(`Error deleting workflow run ${id}:`, error);
+      throw error;
+    }
+  },
+
   // Sync all workflow runs for a repository
   syncWorkflowRuns: async (repoName) => {
     try {

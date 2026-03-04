@@ -39,6 +39,9 @@ router.get('/workflow-runs/queued', workflowController.getQueuedWorkflows);
 // Get workflow run by ID
 router.get('/workflow-runs/:id', workflowController.getWorkflowRunById);
 
+// Delete a workflow run by ID
+router.delete('/workflow-runs/:id', workflowController.deleteWorkflowRun);
+
 // Sync workflow run
 router.post('/workflow-runs/:id/sync', workflowController.syncWorkflowRun);
 

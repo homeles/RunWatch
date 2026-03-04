@@ -255,6 +255,26 @@ export const getWorkflowRunById = async (req, res) => {
   }
 };
 
+export const deleteWorkflowRun = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const workflowRun = await WorkflowRun.findOneAndDelete({ 'run.id': parseInt(id) });
+
+    if (!workflowRun) {
+      return errorResponse(res, 'Workflow run not found', 404);
+    }
+
+    // Notify connected clients so the UI updates in real-time
+    if (req.io) {
+      req.io.emit('workflowDeleted', { runId: parseInt(id) });
+    }
+
+    return successResponse(res, { deleted: true, runId: parseInt(id) }, 'Workflow run deleted');
+  } catch (error) {
+    return errorResponse(res, 'Error deleting workflow run', 500, error);
+  }
+};
+
 export const syncWorkflowRun = async (req, res) => {
   try {
     const { id } = req.params;
