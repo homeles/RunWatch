@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { theme } from './common/theme/theme';
 import Layout from './common/components/Layout';
@@ -10,7 +10,11 @@ import WorkflowHistory from './features/workflows/WorkflowHistory';
 import RepositoryView from './features/repository/RepositoryView';
 import Settings from './features/settings/Settings';
 import { AdminTokenProvider } from './common/context/AdminTokenContext';
+import DemoBanner from './common/components/DemoBanner';
 import './App.css';
+
+const isDemoMode = process.env.REACT_APP_DEMO_MODE === 'true';
+const Router = isDemoMode ? HashRouter : BrowserRouter;
 
 function App() {
   return (
@@ -18,6 +22,7 @@ function App() {
       <CssBaseline />
       <AdminTokenProvider>
         <Router>
+          {isDemoMode && <DemoBanner />}
           <Layout>
             <Routes>
               <Route path="/" element={<Dashboard />} />
