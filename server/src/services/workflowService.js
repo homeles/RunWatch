@@ -136,9 +136,10 @@ export const calculateWorkflowStats = async () => {
       WorkflowRun.countDocuments({ 'run.conclusion': 'success' }),
       WorkflowRun.countDocuments({ 'run.conclusion': 'failure' }),
       WorkflowRun.countDocuments({ 'run.status': 'in_progress' }),
-      WorkflowRun.find()
+      WorkflowRun.find({
+        'run.created_at': { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() }
+      })
         .sort({ 'run.created_at': -1 })
-        .limit(5)
         .select('repository workflow run')
     ]);
 
@@ -156,6 +157,14 @@ export const calculateWorkflowStats = async () => {
           failedRuns: {
             $sum: {
               $cond: [{ $eq: ['$run.conclusion', 'failure'] }, 1, 0]
+            }
+          },
+          avgDuration: {
+            $avg: {
+              $subtract: [
+                { $toDate: '$run.updated_at' },
+                { $toDate: '$run.created_at' }
+              ]
             }
           }
         }
