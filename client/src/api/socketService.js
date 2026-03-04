@@ -189,6 +189,13 @@ export const setupSocketListeners = (callbacks) => {
     debouncedJobsUpdate(data);
   });
 
+  socket.on('workflowDeleted', (data) => {
+    console.log('Received workflowDeleted event:', data);
+    if (callbacks.onWorkflowDeleted) {
+      callbacks.onWorkflowDeleted(data);
+    }
+  });
+
   // Setup the queue time monitoring
   const queueMonitorInterval = setInterval(() => checkQueuedWorkflows(alertConfig, callbacks.onLongQueuedWorkflow), 30000); // Check every 30 seconds
   
@@ -200,6 +207,7 @@ export const setupSocketListeners = (callbacks) => {
     socket.off('workflowUpdate');
     socket.off('workflow_update');
     socket.off('workflowJobsUpdate');
+    socket.off('workflowDeleted');
     clearInterval(queueMonitorInterval);
     lastUpdateTimes.clear();
     queuedWorkflows.clear();

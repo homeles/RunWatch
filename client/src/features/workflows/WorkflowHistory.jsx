@@ -42,6 +42,7 @@ const WorkflowHistory = () => {
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
   const [syncingRun, setSyncingRun] = useState(null);
+  const [deletingRun, setDeletingRun] = useState(null);
 
   const calculateStats = (runs) => {
     if (!runs.length) return null;
@@ -143,6 +144,25 @@ const WorkflowHistory = () => {
     }
   };
 
+  const handleDeleteRun = async (e, runId) => {
+    e.stopPropagation(); // Prevent row click
+    if (!window.confirm('Are you sure you want to delete this workflow run record?')) return;
+    try {
+      setDeletingRun(runId);
+      await apiService.deleteWorkflowRun(runId);
+      // Remove from local state immediately
+      setWorkflowRuns(prev => {
+        const updated = prev.filter(w => w.run.id !== runId);
+        setStats(calculateStats(updated));
+        return updated;
+      });
+    } catch (error) {
+      console.error('Error deleting workflow run:', error);
+    } finally {
+      setDeletingRun(null);
+    }
+  };
+
   const fetchWorkflowHistory = async () => {
     try {
       setLoading(true);
@@ -192,6 +212,13 @@ const WorkflowHistory = () => {
             return updated;
           });
         }
+      },
+      onWorkflowDeleted: ({ runId }) => {
+        setWorkflowRuns(prev => {
+          const updated = prev.filter(w => w.run.id !== runId);
+          setStats(calculateStats(updated));
+          return updated;
+        });
       }
     });
 
@@ -473,6 +500,26 @@ const WorkflowHistory = () => {
                               <CircularProgress size={16} sx={{ color: '#58A6FF' }} />
                             ) : (
                               'Sync'
+                            )}
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={(e) => handleDeleteRun(e, workflow.run.id)}
+                            disabled={deletingRun === workflow.run.id}
+                            sx={{ 
+                              borderColor: 'rgba(248, 81, 73, 0.2)',
+                              color: '#F85149',
+                              '&:hover': {
+                                borderColor: 'rgba(248, 81, 73, 0.5)',
+                                bgcolor: 'rgba(248, 81, 73, 0.1)'
+                              }
+                            }}
+                          >
+                            {deletingRun === workflow.run.id ? (
+                              <CircularProgress size={16} sx={{ color: '#F85149' }} />
+                            ) : (
+                              'Delete'
                             )}
                           </Button>
                         </Stack>
