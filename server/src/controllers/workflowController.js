@@ -28,12 +28,15 @@ export const requireAdminToken = (req, res, next) => {
   }
 
   // Use constant-time comparison to prevent timing attacks.
-  // Hash both tokens to a fixed length (SHA-256) first to eliminate length-based timing leaks.
+  // Pad both values to equal length so timingSafeEqual works without hashing.
   try {
-    const adminHash = crypto.createHash('sha256').update(adminToken).digest();
-    const providedHash = crypto.createHash('sha256').update(provided).digest();
+    const maxLen = Math.max(adminToken.length, provided.length);
+    const adminBuf = Buffer.alloc(maxLen);
+    const providedBuf = Buffer.alloc(maxLen);
+    Buffer.from(adminToken).copy(adminBuf);
+    Buffer.from(provided).copy(providedBuf);
 
-    if (!crypto.timingSafeEqual(adminHash, providedHash)) {
+    if (adminToken.length !== provided.length || !crypto.timingSafeEqual(adminBuf, providedBuf)) {
       return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
     }
   } catch (err) {
@@ -125,18 +128,29 @@ export const getAllWorkflowRuns = async (req, res) => {
   }
 };
 
+// Validates that a repo path matches the expected owner/repo format.
+// Prevents NoSQL injection by rejecting paths with MongoDB operator characters.
+const REPO_PATH_RE = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
+
 export const getRepoWorkflowRuns = async (req, res) => {
   try {
     const repoPath = req.params[0];
-    const { workflowName } = req.query; // Get workflowName from query params
+    // Ensure workflowName is a plain string — qs can parse ?workflowName[$ne]=x into an
+    // object, which would be passed directly into a MongoDB query (NoSQL injection).
+    const workflowName = typeof req.query.workflowName === 'string' ? req.query.workflowName : null;
 
     if (!repoPath) {
       return errorResponse(res, 'Repository name is required', 400);
     }
 
+    // Validate repoPath to prevent NoSQL injection — only allow owner/repo format
+    if (!REPO_PATH_RE.test(repoPath)) {
+      return errorResponse(res, 'Invalid repository path format', 400);
+    }
+
     // First get the repository document to get all workflows
     const repoDoc = await WorkflowRun.findOne({ 'repository.fullName': repoPath });
-    
+
     if (!repoDoc) {
       return successResponse(res, {
         data: [],
@@ -291,6 +305,11 @@ export const syncRepositoryWorkflowRuns = async (req, res) => {
     const repoPath = req.params[0];
     if (!repoPath) {
       return errorResponse(res, 'Repository name is required', 400);
+    }
+
+    // Validate repoPath to prevent NoSQL injection — only allow owner/repo format
+    if (!REPO_PATH_RE.test(repoPath)) {
+      return errorResponse(res, 'Invalid repository path format', 400);
     }
 
     const workflowRuns = await workflowService.syncRepositoryWorkflowRuns(repoPath);
