@@ -1,5 +1,9 @@
 import WorkflowRun from '../models/WorkflowRun.js';
 
+// Strip CR/LF and other control characters from values before embedding in log messages
+// to prevent log injection attacks.
+const sanitizeLog = (v) => (v == null ? '' : String(v).replace(/[\r\n\t\x00-\x1F\x7F]/g, ' '));
+
 const transformGitHubUrl = (apiUrl) => {
   if (!apiUrl) return '';
   // Transform from API URL to web interface URL
@@ -50,7 +54,7 @@ export const processWorkflowRun = async (payload) => {
     console.log('Processing workflow run with labels:', {
       id: run.id,
       labels: workflowRunData.run.labels,
-      status: run.status
+      status: sanitizeLog(run.status)
     });
 
     // Find existing run to preserve any existing labels and jobs if none provided
@@ -201,7 +205,7 @@ export const processWorkflowJobEvent = async (payload) => {
       jobId: workflow_job.id,
       runId: workflow_job.run_id,
       labels: workflow_job.labels,
-      status: workflow_job.status
+      status: sanitizeLog(workflow_job.status)
     });
 
     const processGitHubRunnerInfo = (job) => {

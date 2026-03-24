@@ -2,6 +2,10 @@ import { getGitHubClient } from '../utils/githubAuth.js';
 import * as workflowService from './workflowService.js';
 import SyncHistory from '../models/SyncHistory.js';
 
+// Strip CR/LF and other control characters from values before embedding in log messages
+// to prevent log injection attacks.
+const sanitizeLog = (v) => (v == null ? '' : String(v).replace(/[\r\n\t\x00-\x1F\x7F]/g, ' '));
+
 // Mark any existing in_progress syncs as interrupted when starting up
 const markInterruptedSyncs = async () => {
     try {
@@ -357,7 +361,7 @@ export const syncGitHubData = async (installationId, socket, options = { maxWork
                                 runs.push(...runsPage);
                                 page++;
                             } catch (error) {
-                                console.error(`Error fetching runs for workflow ${workflow.name}:`, error);
+                                console.error(`Error fetching runs for workflow ${sanitizeLog(workflow.name)}:`, error);
                                 break;
                             }
                         }
@@ -460,7 +464,7 @@ export const syncGitHubData = async (installationId, socket, options = { maxWork
                                     }
                                 );
                             } catch (error) {
-                                console.error(`Error processing run ${run.id}:`, error);
+                                console.error(`Error processing run ${sanitizeLog(run.id)}:`, error);
                                 results.errors.push({
                                     type: 'run',
                                     id: run.id,
@@ -470,7 +474,7 @@ export const syncGitHubData = async (installationId, socket, options = { maxWork
                             }
                         }
                     } catch (error) {
-                        console.error(`Error processing workflow ${workflow.name}:`, error);
+                        console.error(`Error processing workflow ${sanitizeLog(workflow.name)}:`, error);
                         results.errors.push({
                             type: 'workflow',
                             name: workflow.name,
@@ -480,7 +484,7 @@ export const syncGitHubData = async (installationId, socket, options = { maxWork
                 }
                 
             } catch (error) {
-                console.error(`Error processing repository ${repo.name}:`, error);
+                console.error(`Error processing repository ${sanitizeLog(repo.name)}:`, error);
                 results.errors.push({
                     type: 'repository',
                     name: repo.name,

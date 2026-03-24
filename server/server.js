@@ -104,11 +104,14 @@ app.post('/api/webhooks/github', async (req, res) => {
   const name = req.headers['x-github-event'];
   const contentType = req.headers['content-type'];
 
+  // Sanitize header values before logging to prevent log injection via CRLF.
+  const sanitize = (v) => (v == null ? '' : String(v).replace(/[\r\n\t\x00-\x1F\x7F]/g, ' '));
+
   console.log('Received webhook POST request from GitHub');
-  console.log('Event:', name);
-  console.log('Delivery ID:', id);
-  console.log('Content-Type:', contentType);
-  console.log('Signature:', signature);
+  console.log('Event:', sanitize(name));
+  console.log('Delivery ID:', sanitize(id));
+  console.log('Content-Type:', sanitize(contentType));
+  console.log('Signature:', sanitize(signature));
 
   if (!signature || !id || !name) {
     console.error('Missing required webhook headers');
