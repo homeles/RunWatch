@@ -97,7 +97,7 @@ export const updateWorkflowJobs = async (runId, jobs) => {
       runner_group_id: job.runner_group_id,
       runner_group_name: job.runner_group_name,
       runner_os: job.runner_os || (job.labels?.find(l => l.includes('ubuntu') || l.includes('windows') || l.includes('macos')) || '').split('-')[0],
-      runner_version: job.labels?.find(l => l.includes('(') && l.includes(')'))?.match(/\((.*?)\)/)?.[1] || '',
+      runner_version: job.labels?.find(l => l.includes('(') && l.includes(')'))?.match(/\(([^)]*)\)/)?.[1] || '',
       runner_image_version: job.labels?.find(l => l.includes('-'))?.split('-')[1] || '',
       steps: job.steps.map(step => ({
         name: step.name,
@@ -219,7 +219,7 @@ export const processWorkflowJobEvent = async (payload) => {
 
         const githubLabel = job.labels.find(l => l.includes('GitHub Actions'));
         if (githubLabel) {
-          const match = githubLabel.match(/\((.*?)\)/);
+          const match = githubLabel.match(/\(([^)]*)\)/);
           if (match) {
             runnerVersion = match[1];
           }

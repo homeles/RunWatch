@@ -128,7 +128,9 @@ export const getAllWorkflowRuns = async (req, res) => {
 export const getRepoWorkflowRuns = async (req, res) => {
   try {
     const repoPath = req.params[0];
-    const { workflowName } = req.query; // Get workflowName from query params
+    // Ensure workflowName is a plain string — qs can parse ?workflowName[$ne]=x into an
+    // object, which would be passed directly into a MongoDB query (NoSQL injection).
+    const workflowName = typeof req.query.workflowName === 'string' ? req.query.workflowName : null;
 
     if (!repoPath) {
       return errorResponse(res, 'Repository name is required', 400);
@@ -136,7 +138,7 @@ export const getRepoWorkflowRuns = async (req, res) => {
 
     // First get the repository document to get all workflows
     const repoDoc = await WorkflowRun.findOne({ 'repository.fullName': repoPath });
-    
+
     if (!repoDoc) {
       return successResponse(res, {
         data: [],
