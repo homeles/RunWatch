@@ -28,14 +28,15 @@ export const requireAdminToken = (req, res, next) => {
   }
 
   // Use constant-time comparison to prevent timing attacks.
-  // HMAC both tokens with a fixed key to produce equal-length buffers without using a
-  // password-hashing primitive (SHA-256 alone would be flagged as an insufficient password hash).
+  // Pad both values to equal length so timingSafeEqual works without hashing.
   try {
-    const hmacKey = Buffer.alloc(32); // fixed all-zeros key — used only for length normalisation
-    const adminHash = crypto.createHmac('sha256', hmacKey).update(adminToken).digest();
-    const providedHash = crypto.createHmac('sha256', hmacKey).update(provided).digest();
+    const maxLen = Math.max(adminToken.length, provided.length);
+    const adminBuf = Buffer.alloc(maxLen);
+    const providedBuf = Buffer.alloc(maxLen);
+    Buffer.from(adminToken).copy(adminBuf);
+    Buffer.from(provided).copy(providedBuf);
 
-    if (!crypto.timingSafeEqual(adminHash, providedHash)) {
+    if (adminToken.length !== provided.length || !crypto.timingSafeEqual(adminBuf, providedBuf)) {
       return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
     }
   } catch (err) {
