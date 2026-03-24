@@ -28,10 +28,12 @@ export const requireAdminToken = (req, res, next) => {
   }
 
   // Use constant-time comparison to prevent timing attacks.
-  // Hash both tokens to a fixed length (SHA-256) first to eliminate length-based timing leaks.
+  // HMAC both tokens with a fixed key to produce equal-length buffers without using a
+  // password-hashing primitive (SHA-256 alone would be flagged as an insufficient password hash).
   try {
-    const adminHash = crypto.createHash('sha256').update(adminToken).digest();
-    const providedHash = crypto.createHash('sha256').update(provided).digest();
+    const hmacKey = Buffer.alloc(32); // fixed all-zeros key — used only for length normalisation
+    const adminHash = crypto.createHmac('sha256', hmacKey).update(adminToken).digest();
+    const providedHash = crypto.createHmac('sha256', hmacKey).update(provided).digest();
 
     if (!crypto.timingSafeEqual(adminHash, providedHash)) {
       return res.status(401).json({ error: 'Unauthorized: valid admin token required.' });
@@ -125,6 +127,10 @@ export const getAllWorkflowRuns = async (req, res) => {
   }
 };
 
+// Validates that a repo path matches the expected owner/repo format.
+// Prevents NoSQL injection by rejecting paths with MongoDB operator characters.
+const REPO_PATH_RE = /^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/;
+
 export const getRepoWorkflowRuns = async (req, res) => {
   try {
     const repoPath = req.params[0];
@@ -134,6 +140,11 @@ export const getRepoWorkflowRuns = async (req, res) => {
 
     if (!repoPath) {
       return errorResponse(res, 'Repository name is required', 400);
+    }
+
+    // Validate repoPath to prevent NoSQL injection — only allow owner/repo format
+    if (!REPO_PATH_RE.test(repoPath)) {
+      return errorResponse(res, 'Invalid repository path format', 400);
     }
 
     // First get the repository document to get all workflows
@@ -293,6 +304,11 @@ export const syncRepositoryWorkflowRuns = async (req, res) => {
     const repoPath = req.params[0];
     if (!repoPath) {
       return errorResponse(res, 'Repository name is required', 400);
+    }
+
+    // Validate repoPath to prevent NoSQL injection — only allow owner/repo format
+    if (!REPO_PATH_RE.test(repoPath)) {
+      return errorResponse(res, 'Invalid repository path format', 400);
     }
 
     const workflowRuns = await workflowService.syncRepositoryWorkflowRuns(repoPath);

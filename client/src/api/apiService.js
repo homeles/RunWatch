@@ -56,7 +56,7 @@ const apiService = {
       const response = await api.get(`${API_URL}/workflow-runs/repo/${repoName}`, { params });
       return response.data.data || { data: [], pagination: { total: 0, page: 1, pageSize: 0, totalPages: 1 } };
     } catch (error) {
-      console.error(`Error fetching workflow runs for repo ${sanitizeLog(repoName)}:`, error);
+      console.error("Error fetching workflow runs for repo:", sanitizeLog(repoName), error);
       throw error;
     }
   },
@@ -67,7 +67,7 @@ const apiService = {
       const response = await api.get(`${API_URL}/workflow-runs/${id}`);
       return response.data.data;
     } catch (error) {
-      console.error(`Error fetching workflow run ${sanitizeLog(id)}:`, error);
+      console.error("Error fetching workflow run:", sanitizeLog(id), error);
       throw error;
     }
   },
@@ -78,7 +78,7 @@ const apiService = {
       const response = await api.post(`${API_URL}/workflow-runs/${id}/sync`);
       return response.data.data;
     } catch (error) {
-      console.error(`Error syncing workflow run ${sanitizeLog(id)}:`, error);
+      console.error("Error syncing workflow run:", sanitizeLog(id), error);
       throw error;
     }
   },
@@ -88,7 +88,7 @@ const apiService = {
       const response = await api.delete(`${API_URL}/workflow-runs/${id}`);
       return response.data.data;
     } catch (error) {
-      console.error(`Error deleting workflow run ${sanitizeLog(id)}:`, error);
+      console.error("Error deleting workflow run:", sanitizeLog(id), error);
       throw error;
     }
   },
@@ -99,7 +99,7 @@ const apiService = {
       const response = await api.post(`${API_URL}/workflow-runs/repo/${repoName}/sync`);
       return response.data.data;
     } catch (error) {
-      console.error(`Error syncing workflow runs for repo ${sanitizeLog(repoName)}:`, error);
+      console.error("Error syncing workflow runs for repo:", sanitizeLog(repoName), error);
       throw error;
     }
   },

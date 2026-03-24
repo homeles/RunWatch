@@ -100,8 +100,8 @@ export const updateWorkflowJobs = async (runId, jobs) => {
       runner_name: job.runner_name,
       runner_group_id: job.runner_group_id,
       runner_group_name: job.runner_group_name,
-      runner_os: job.runner_os || (job.labels?.find(l => l.includes('ubuntu') || l.includes('windows') || l.includes('macos')) || '').split('-')[0],
-      runner_version: job.labels?.find(l => l.includes('(') && l.includes(')'))?.match(/\(([^)]*)\)/)?.[1] || '',
+      runner_os: job.runner_os || (job.labels?.find(l => l.startsWith('ubuntu') || l.startsWith('windows') || l.startsWith('macos')) || '').split('-')[0],
+      runner_version: (() => { const s = job.labels?.find(l => l.includes('(') && l.includes(')')); if (!s) return ''; const start = s.indexOf('('); const end = s.indexOf(')', start + 1); return start !== -1 && end !== -1 ? s.slice(start + 1, end) : ''; })(),
       runner_image_version: job.labels?.find(l => l.includes('-'))?.split('-')[1] || '',
       steps: job.steps.map(step => ({
         name: step.name,
@@ -214,7 +214,7 @@ export const processWorkflowJobEvent = async (payload) => {
       let imageVersion = '';
 
       if (job.labels) {
-        const osLabel = job.labels.find(l => l.match(/^(ubuntu|windows|macos)/));
+        const osLabel = job.labels.find(l => l.startsWith('ubuntu') || l.startsWith('windows') || l.startsWith('macos'));
         if (osLabel) {
           const [os, version] = osLabel.split('-');
           runnerOs = os;
@@ -223,9 +223,10 @@ export const processWorkflowJobEvent = async (payload) => {
 
         const githubLabel = job.labels.find(l => l.includes('GitHub Actions'));
         if (githubLabel) {
-          const match = githubLabel.match(/\(([^)]*)\)/);
-          if (match) {
-            runnerVersion = match[1];
+          const start = githubLabel.indexOf('(');
+          const end = githubLabel.indexOf(')', start + 1);
+          if (start !== -1 && end !== -1) {
+            runnerVersion = githubLabel.slice(start + 1, end);
           }
         }
       }
