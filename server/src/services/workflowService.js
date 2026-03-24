@@ -1,5 +1,9 @@
 import WorkflowRun from '../models/WorkflowRun.js';
 
+// Strip CR/LF and other control characters from values before embedding in log messages
+// to prevent log injection attacks.
+const sanitizeLog = (v) => (v == null ? '' : String(v).replace(/[\r\n\t\x00-\x1F\x7F]/g, ' '));
+
 const transformGitHubUrl = (apiUrl) => {
   if (!apiUrl) return '';
   // Transform from API URL to web interface URL
@@ -50,7 +54,7 @@ export const processWorkflowRun = async (payload) => {
     console.log('Processing workflow run with labels:', {
       id: run.id,
       labels: workflowRunData.run.labels,
-      status: run.status
+      status: sanitizeLog(run.status)
     });
 
     // Find existing run to preserve any existing labels and jobs if none provided
@@ -96,8 +100,8 @@ export const updateWorkflowJobs = async (runId, jobs) => {
       runner_name: job.runner_name,
       runner_group_id: job.runner_group_id,
       runner_group_name: job.runner_group_name,
-      runner_os: job.runner_os || (job.labels?.find(l => l.includes('ubuntu') || l.includes('windows') || l.includes('macos')) || '').split('-')[0],
-      runner_version: job.labels?.find(l => l.includes('(') && l.includes(')'))?.match(/\((.*?)\)/)?.[1] || '',
+      runner_os: job.runner_os || (job.labels?.find(l => l.startsWith('ubuntu') || l.startsWith('windows') || l.startsWith('macos')) || '').split('-')[0],
+      runner_version: (() => { const s = job.labels?.find(l => l.includes('(') && l.includes(')')); if (!s) return ''; const start = s.indexOf('('); const end = s.indexOf(')', start + 1); return start !== -1 && end !== -1 ? s.slice(start + 1, end) : ''; })(),
       runner_image_version: job.labels?.find(l => l.includes('-'))?.split('-')[1] || '',
       steps: job.steps.map(step => ({
         name: step.name,
@@ -201,7 +205,7 @@ export const processWorkflowJobEvent = async (payload) => {
       jobId: workflow_job.id,
       runId: workflow_job.run_id,
       labels: workflow_job.labels,
-      status: workflow_job.status
+      status: sanitizeLog(workflow_job.status)
     });
 
     const processGitHubRunnerInfo = (job) => {
@@ -210,7 +214,7 @@ export const processWorkflowJobEvent = async (payload) => {
       let imageVersion = '';
 
       if (job.labels) {
-        const osLabel = job.labels.find(l => l.match(/^(ubuntu|windows|macos)/));
+        const osLabel = job.labels.find(l => l.startsWith('ubuntu') || l.startsWith('windows') || l.startsWith('macos'));
         if (osLabel) {
           const [os, version] = osLabel.split('-');
           runnerOs = os;
@@ -219,9 +223,10 @@ export const processWorkflowJobEvent = async (payload) => {
 
         const githubLabel = job.labels.find(l => l.includes('GitHub Actions'));
         if (githubLabel) {
-          const match = githubLabel.match(/\((.*?)\)/);
-          if (match) {
-            runnerVersion = match[1];
+          const start = githubLabel.indexOf('(');
+          const end = githubLabel.indexOf(')', start + 1);
+          if (start !== -1 && end !== -1) {
+            runnerVersion = githubLabel.slice(start + 1, end);
           }
         }
       }
