@@ -1,0 +1,91 @@
+# -- RunWatch Helm Chart Values --
+
+# Server (backend) configuration
+server:
+  image:
+    repository: runwatch-server
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 1
+  port: 5001
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # Additional environment variables for the server
+  extraEnv: []
+
+# Client (frontend) configuration
+client:
+  image:
+    repository: runwatch-client
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicas: 1
+  port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  host: runwatch.example.com
+  tls: []
+  #  - secretName: runwatch-tls
+  #    hosts:
+  #      - runwatch.example.com
+
+# -- External MongoDB connection --
+# Required: provide the full connection string to your external MongoDB instance.
+mongodb:
+  uri: ""  # e.g. mongodb+srv://user:pass@cluster.mongodb.net/runwatch?retryWrites=true&w=majority
+
+# -- GitHub App configuration --
+github:
+  webhookSecret: ""
+  appId: ""
+  # The PEM private key content (not base64-encoded — the chart handles encoding).
+  # Provide the raw PEM content here, or use --set-file github.appPrivateKey=path/to/key.pem
+  appPrivateKey: ""
+
+# -- Admin API token (protects backup/restore endpoints) --
+adminApiToken: ""
+
+# -- URLs --
+# clientUrl: The public URL of the frontend (used by the server for CORS).
+# reactAppApiUrl: The public API URL the browser uses to reach the backend.
+# reactAppWebsocketUrl: The public WebSocket URL the browser uses.
+clientUrl: ""          # e.g. https://runwatch.example.com
+reactAppApiUrl: ""     # e.g. https://runwatch.example.com/api
+reactAppWebsocketUrl: ""  # e.g. wss://runwatch.example.com
+
+# Use an existing Kubernetes Secret instead of creating one from values above.
+# The secret must contain keys: mongodb-uri, github-webhook-secret, github-app-id,
+# github-app-private-key, admin-api-token
+existingSecret: ""
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Image pull secrets (if using a private registry)
+imagePullSecrets: []
