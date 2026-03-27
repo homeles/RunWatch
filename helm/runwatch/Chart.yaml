@@ -1,0 +1,11 @@
+apiVersion: v2
+name: runwatch
+description: A Helm chart for RunWatch - GitHub Actions Workflow Monitor
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - github-actions
+  - monitoring
+  - workflow
+home: https://github.com/homeles/RunWatch
