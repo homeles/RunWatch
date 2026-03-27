@@ -1,0 +1,53 @@
+# Example values for deploying RunWatch to Kubernetes
+# Copy this file and fill in your actual values:
+#   cp values-example.yaml my-values.yaml
+#   helm install runwatch ./helm/runwatch -f my-values.yaml -n runwatch --create-namespace
+
+server:
+  image:
+    repository: ghcr.io/homeles/runwatch-server  # Replace with your registry
+    tag: latest
+  replicas: 1
+
+client:
+  image:
+    repository: ghcr.io/homeles/runwatch-client  # Replace with your registry
+    tag: latest
+  replicas: 1
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # Enable WebSocket support
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+    # Uncomment for TLS with cert-manager:
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  host: runwatch.example.com
+  tls: []
+  #  - secretName: runwatch-tls
+  #    hosts:
+  #      - runwatch.example.com
+
+# External MongoDB connection string
+mongodb:
+  uri: "mongodb+srv://runwatch_app:YOUR_PASSWORD@your-cluster.mongodb.net/runwatch?retryWrites=true&w=majority"
+
+# GitHub App credentials
+github:
+  webhookSecret: "your-webhook-secret"
+  appId: "123456"
+  # Provide the raw PEM key content. When installing, use --set-file:
+  #   helm install runwatch ./helm/runwatch -f my-values.yaml --set-file github.appPrivateKey=./private-key.pem
+  appPrivateKey: ""
+
+# Admin API token for backup/restore endpoints
+adminApiToken: "your-admin-api-token"
+
+# Public-facing URLs
+clientUrl: "https://runwatch.example.com"
+reactAppApiUrl: "https://runwatch.example.com/api"
+reactAppWebsocketUrl: "wss://runwatch.example.com"

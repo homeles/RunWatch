@@ -1,0 +1,19 @@
+RunWatch has been deployed!
+
+{{- if .Values.ingress.enabled }}
+
+Application URL: http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.host }}
+
+{{- else }}
+
+To access RunWatch, run:
+  kubectl port-forward svc/{{ include "runwatch.client.fullname" . }} 8080:80 -n {{ .Release.Namespace }}
+  Then open: http://localhost:8080
+
+{{- end }}
+
+Backend server:  {{ include "runwatch.server.fullname" . }}:{{ .Values.server.port }}
+Frontend client: {{ include "runwatch.client.fullname" . }}:80
+
+Verify the deployment:
+  kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }} -n {{ .Release.Namespace }}
