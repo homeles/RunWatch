@@ -14,7 +14,6 @@ const Layout = ({ children }) => {
       <aside className="w-[240px] h-screen fixed left-0 top-0 bg-[#0a0e14] flex flex-col py-6 px-4 text-sm tracking-tight z-[60]">
         <div className="mb-8 px-2">
           <h1 className="text-[#a2c9ff] font-bold tracking-tighter text-xl">RunWatch</h1>
-          <p className="text-on-surface-variant/50 text-[10px] uppercase tracking-widest mt-1">V3 Monitoring</p>
         </div>
 
         <nav className="flex-1 space-y-1">
@@ -42,23 +41,15 @@ const Layout = ({ children }) => {
             href="#"
             className="flex items-center gap-3 px-3 py-2 text-[#dfe2eb]/60 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-colors duration-200"
           >
-            <span className="material-symbols-outlined">help</span>
-            Support
-          </a>
-          <a
-            href="#"
-            className="flex items-center gap-3 px-3 py-2 text-[#dfe2eb]/60 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-colors duration-200"
-          >
             <span className="material-symbols-outlined">description</span>
             Docs
           </a>
           <div className="mt-6 flex items-center gap-3 px-3 py-2">
             <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-xs font-bold text-on-surface">
-              E
+              U
             </div>
             <div className="flex flex-col">
-              <span className="text-xs font-semibold">Engineer</span>
-              <span className="text-[10px] opacity-50">Admin Access</span>
+              <span className="text-xs font-semibold">User</span>
             </div>
           </div>
         </div>
@@ -84,9 +75,6 @@ const Layout = ({ children }) => {
             <button className="p-1.5 text-[#dfe2eb]/60 hover:text-primary material-symbols-outlined">chevron_left</button>
             <button className="p-1.5 text-[#dfe2eb]/60 hover:text-primary material-symbols-outlined">chevron_right</button>
           </div>
-          <button className="bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed px-5 py-1.5 rounded-lg text-xs font-bold shadow-lg shadow-primary/10 active:opacity-70 transition-all">
-            Deploy
-          </button>
         </div>
       </header>
 
