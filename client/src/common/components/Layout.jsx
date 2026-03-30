@@ -1,303 +1,100 @@
-import React, { Fragment, useState, useEffect } from 'react';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
-import {
-  AppBar,
-  Box,
-  Drawer,
-  IconButton,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
-  Typography,
-  Divider,
-  Tooltip,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Dashboard as DashboardIcon,
-  Assessment as AssessmentIcon,
-  GitHub as GitHubIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
-  Settings as SettingsIcon
-} from '@mui/icons-material';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
 
-const expandedWidth = 280;
-const collapsedWidth = 72;
+const navItems = [
+  { text: 'Dashboard', icon: 'dashboard', path: '/' },
+  { text: 'Statistics', icon: 'analytics', path: '/stats' },
+  { text: 'Settings', icon: 'settings', path: '/settings' },
+];
 
 const Layout = ({ children }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(() => {
-    const saved = localStorage.getItem('menuExpanded');
-    return saved !== null ? JSON.parse(saved) : !isMobile;
-  });
-  const location = useLocation();
-
-  useEffect(() => {
-    localStorage.setItem('menuExpanded', JSON.stringify(isExpanded));
-  }, [isExpanded]);
-
-  useEffect(() => {
-    if (isMobile) {
-      setIsExpanded(false);
-    }
-  }, [isMobile]);
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Statistics', icon: <AssessmentIcon />, path: '/stats' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
-  ];
-
-  const drawer = (
-    <Box sx={{ 
-      background: 'linear-gradient(180deg, #0D1117 0%, #161B22 100%)',
-      height: '100%',
-      color: '#E6EDF3',
-      position: 'relative',
-      overflow: 'visible'
-    }}>
-      <Toolbar sx={{ 
-        minHeight: '80px !important',
-        bgcolor: 'transparent',
-        px: isExpanded ? 3 : 2,
-        '& .MuiSvgIcon-root': { color: '#58A6FF' },
-        transition: theme.transitions.create(['padding'], {
-          easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.enteringScreen,
-        }),
-      }}>
-        <GitHubIcon sx={{ 
-          mr: isExpanded ? 2 : 0, 
-          fontSize: '2rem',
-          transition: theme.transitions.create(['margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-        }} />
-        {isExpanded && (
-          <Typography variant="h5" noWrap sx={{ 
-            fontWeight: 600,
-            background: 'linear-gradient(90deg, #58A6FF 0%, #88CFFF 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            opacity: isExpanded ? 1 : 0,
-            transition: theme.transitions.create(['opacity'], {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
-          }}>
-            RunWatch
-          </Typography>
-        )}
-      </Toolbar>
-      {!isMobile && (
-        <IconButton
-          onClick={toggleExpanded}
-          sx={{
-            position: 'absolute',
-            right: '-12px',
-            top: '90px',
-            bgcolor: '#161B22',
-            border: '1px solid rgba(240, 246, 252, 0.1)',
-            width: '24px',
-            height: '24px',
-            zIndex: 1,
-            '&:hover': {
-              bgcolor: '#21262D'
-            },
-            '& .MuiSvgIcon-root': {
-              fontSize: '1rem',
-              color: '#8B949E',
-              transition: theme.transitions.create(['transform'], {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-            }
-          }}
-        >
-          {isExpanded ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-        </IconButton>
-      )}
-      <Divider sx={{ borderColor: 'rgba(240, 246, 252, 0.1)' }} />
-      <List sx={{ mt: 2, px: 1 }}>
-        {menuItems.map((item) => (
-          <ListItem 
-            button 
-            key={item.text} 
-            component={RouterLink} 
-            to={item.path}
-            onClick={() => setMobileOpen(false)}
-            selected={location.pathname === item.path}
-            sx={{
-              borderRadius: '8px',
-              mb: 1,
-              height: 48,
-              justifyContent: isExpanded ? 'initial' : 'center',
-              px: isExpanded ? 2 : 1,
-              color: location.pathname === item.path ? '#E6EDF3' : '#8B949E',
-              transition: theme.transitions.create(['padding', 'min-width', 'color'], {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-              '&.Mui-selected': {
-                bgcolor: 'rgba(88, 166, 255, 0.15)',
-                '&:hover': {
-                  bgcolor: 'rgba(88, 166, 255, 0.25)',
-                },
-                '& .MuiListItemIcon-root': {
-                  color: '#58A6FF',
-                }
-              },
-              '&:hover': {
-                bgcolor: 'rgba(88, 166, 255, 0.1)',
-                '& .MuiListItemIcon-root': {
-                  color: '#58A6FF',
-                }
-              }
-            }}
-          >
-            <Tooltip title={!isExpanded ? item.text : ''} placement="right">
-              <ListItemIcon sx={{
-                color: location.pathname === item.path ? '#58A6FF' : '#8B949E',
-                minWidth: isExpanded ? 40 : 'auto',
-                mr: isExpanded ? 2 : 'auto',
-                justifyContent: 'center',
-                transition: theme.transitions.create(['margin', 'min-width', 'color'], {
-                  easing: theme.transitions.easing.sharp,
-                  duration: theme.transitions.duration.enteringScreen,
-                }),
-              }}>
-                {item.icon}
-              </ListItemIcon>
-            </Tooltip>
-            {isExpanded && (
-              <ListItemText 
-                primary={item.text} 
-                primaryTypographyProps={{
-                  fontSize: '0.95rem',
-                  fontWeight: location.pathname === item.path ? 600 : 400,
-                  opacity: isExpanded ? 1 : 0,
-                  transition: theme.transitions.create(['opacity'], {
-                    easing: theme.transitions.easing.sharp,
-                    duration: theme.transitions.duration.enteringScreen,
-                  }),
-                }}
-              />
-            )}
-          </ListItem>
-        ))}
-      </List>
-    </Box>
-  );
-
   return (
-    <Box sx={{ display: 'flex', bgcolor: '#0D1117', minHeight: '100vh' }}>
-      <AppBar
-        position="fixed"
-        elevation={0}
-        sx={{
-          width: { sm: `calc(100% - ${isExpanded ? expandedWidth : collapsedWidth}px)` },
-          ml: { sm: `${isExpanded ? expandedWidth : collapsedWidth}px` },
-          bgcolor: '#161B22',
-          borderBottom: '1px solid rgba(240, 246, 252, 0.1)',
-          transition: theme.transitions.create(['width', 'margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          })
-        }}
-      >
-        <Toolbar sx={{ minHeight: '80px !important' }}>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' }, color: '#E6EDF3' }}
+    <div className="bg-surface text-on-surface antialiased overflow-hidden">
+      {/* Sidebar */}
+      <aside className="w-[240px] h-screen fixed left-0 top-0 bg-[#0a0e14] flex flex-col py-6 px-4 text-sm tracking-tight z-[60]">
+        <div className="mb-8 px-2">
+          <h1 className="text-[#a2c9ff] font-bold tracking-tighter text-xl">RunWatch</h1>
+          <p className="text-on-surface-variant/50 text-[10px] uppercase tracking-widest mt-1">V3 Monitoring</p>
+        </div>
+
+        <nav className="flex-1 space-y-1">
+          {navItems.map(({ text, icon, path }) => (
+            <NavLink
+              key={path}
+              to={path}
+              end={path === '/'}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 transition-colors duration-200 hover:bg-[#1c2026] ${
+                  isActive
+                    ? 'text-[#a2c9ff] font-medium border-l-2 border-[#a2c9ff]'
+                    : 'text-[#dfe2eb]/60 hover:text-[#dfe2eb]'
+                }`
+              }
+            >
+              <span className="material-symbols-outlined">{icon}</span>
+              {text}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="mt-auto space-y-1 pt-6">
+          <a
+            href="#"
+            className="flex items-center gap-3 px-3 py-2 text-[#dfe2eb]/60 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-colors duration-200"
           >
-            <MenuIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-      <Box
-        component="nav"
-        sx={{ 
-          width: { sm: isExpanded ? expandedWidth : collapsedWidth }, 
-          flexShrink: { sm: 0 },
-        }}
-      >
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { 
-              boxSizing: 'border-box', 
-              width: expandedWidth,
-              borderRight: '1px solid rgba(240, 246, 252, 0.1)',
-              transition: theme.transitions.create('width', {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-            },
-          }}
-        >
-          {drawer}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { 
-              boxSizing: 'border-box', 
-              width: isExpanded ? expandedWidth : collapsedWidth,
-              borderRight: '1px solid rgba(240, 246, 252, 0.1)',
-              overflowX: 'hidden',
-              transition: theme.transitions.create('width', {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
-            },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
-      </Box>
-      <Box
-        component="main"
-        sx={{ 
-          flexGrow: 1, 
-          p: 4, 
-          width: { sm: `calc(100% - ${isExpanded ? expandedWidth : collapsedWidth}px)` },
-          mt: '80px',
-          bgcolor: '#0D1117',
-          color: '#E6EDF3',
-          transition: theme.transitions.create(['width', 'margin'], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          })
-        }}
-      >
+            <span className="material-symbols-outlined">help</span>
+            Support
+          </a>
+          <a
+            href="#"
+            className="flex items-center gap-3 px-3 py-2 text-[#dfe2eb]/60 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-colors duration-200"
+          >
+            <span className="material-symbols-outlined">description</span>
+            Docs
+          </a>
+          <div className="mt-6 flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-xs font-bold text-on-surface">
+              E
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold">Engineer</span>
+              <span className="text-[10px] opacity-50">Admin Access</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Top Header */}
+      <header className="fixed top-0 right-0 left-[240px] h-16 bg-[#10141a]/80 backdrop-blur-xl flex items-center justify-between px-8 z-50 text-sm font-medium tracking-normal">
+        <div className="flex items-center gap-6">
+          <div className="relative group">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]">search</span>
+            <input
+              className="bg-surface-container-highest border-none rounded-lg pl-10 pr-4 py-1.5 w-64 text-xs focus:ring-1 focus:ring-primary/40 focus:bg-surface-bright transition-all outline-none text-on-surface"
+              placeholder="Search repositories..."
+              type="text"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button className="p-2 text-[#dfe2eb]/60 hover:text-primary transition-colors">
+            <span className="material-symbols-outlined">refresh</span>
+          </button>
+          <div className="flex items-center gap-1">
+            <button className="p-1.5 text-[#dfe2eb]/60 hover:text-primary material-symbols-outlined">chevron_left</button>
+            <button className="p-1.5 text-[#dfe2eb]/60 hover:text-primary material-symbols-outlined">chevron_right</button>
+          </div>
+          <button className="bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed px-5 py-1.5 rounded-lg text-xs font-bold shadow-lg shadow-primary/10 active:opacity-70 transition-all">
+            Deploy
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="ml-[240px] pt-16 h-screen overflow-y-auto bg-surface">
         {children}
-      </Box>
-    </Box>
+      </main>
+    </div>
   );
 };
 
