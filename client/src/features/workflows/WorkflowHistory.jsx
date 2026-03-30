@@ -6,8 +6,6 @@ import { formatDuration, formatDate } from '../../common/utils/statusHelpers';
 import apiService from '../../api/apiService';
 import { setupSocketListeners } from '../../api/socketService';
 
-const ITEMS_PER_PAGE = 20;
-
 const WorkflowHistory = () => {
   const { repoName, workflowName } = useParams();
   const navigate = useNavigate();
@@ -17,6 +15,7 @@ const WorkflowHistory = () => {
   const [stats, setStats] = useState(null);
   const [syncingRun, setSyncingRun] = useState(null);
   const [deletingRun, setDeletingRun] = useState(null);
+  const [filter, setFilter] = useState('all');
 
   const calculateStats = (runs) => {
     if (!runs.length) return null;
@@ -77,24 +76,24 @@ const WorkflowHistory = () => {
         {
           label: 'Total Runs',
           data: dailyStats.map(stat => stat.total),
-          borderColor: 'rgba(88, 166, 255, 1)',
-          backgroundColor: 'rgba(88, 166, 255, 0.1)',
+          borderColor: 'rgba(162, 201, 255, 1)',
+          backgroundColor: 'rgba(162, 201, 255, 0.1)',
           tension: 0.4,
           fill: true,
         },
         {
           label: 'Successful',
           data: dailyStats.map(stat => stat.successful),
-          borderColor: 'rgba(35, 197, 98, 1)',
-          backgroundColor: 'rgba(35, 197, 98, 0.1)',
+          borderColor: 'rgba(103, 223, 112, 1)',
+          backgroundColor: 'rgba(103, 223, 112, 0.1)',
           tension: 0.4,
           fill: true,
         },
         {
           label: 'Failed',
           data: dailyStats.map(stat => stat.failed),
-          borderColor: 'rgba(248, 81, 73, 1)',
-          backgroundColor: 'rgba(248, 81, 73, 0.1)',
+          borderColor: 'rgba(255, 180, 171, 1)',
+          backgroundColor: 'rgba(255, 180, 171, 0.1)',
           tension: 0.4,
           fill: true,
         },
@@ -218,167 +217,308 @@ const WorkflowHistory = () => {
     maintainAspectRatio: false,
     interaction: { intersect: false, mode: 'index' },
     plugins: {
-      legend: {
-        position: 'top',
-        labels: { color: '#8B949E', boxWidth: 12, padding: 8, font: { size: 11 } }
-      }
+      legend: { display: false },
     },
     scales: {
       y: {
         beginAtZero: true,
-        grid: { color: 'rgba(240,246,252,0.1)' },
-        ticks: { color: '#8B949E', font: { size: 10 } }
+        grid: { color: 'rgba(65, 71, 82, 0.3)' },
+        ticks: { color: '#8b919d', font: { size: 10 } },
       },
       x: {
-        grid: { color: 'rgba(240,246,252,0.1)' },
-        ticks: { color: '#8B949E', font: { size: 10 } }
-      }
-    }
+        grid: { color: 'rgba(65, 71, 82, 0.3)' },
+        ticks: { color: '#8b919d', font: { size: 10 } },
+      },
+    },
   };
+
+  const repoParts = decodeURIComponent(repoName).split('/');
+  const org = repoParts[0];
+  const repo = repoParts.slice(1).join('/');
+  const decodedWorkflow = decodeURIComponent(workflowName);
+
+  const filteredRuns = workflowRuns.filter(w => {
+    if (!w.run) return false;
+    if (filter === 'success') return w.run.conclusion === 'success';
+    if (filter === 'failure') return w.run.conclusion === 'failure';
+    return true;
+  });
 
   return (
     <div className="pb-12">
-      {/* Header */}
-      <div className="flex items-center mb-8 bg-primary/10 p-6 rounded-xl border border-primary/20">
-        <button
-          onClick={() => navigate('/')}
-          title="Back to Dashboard"
-          className="mr-4 p-2 rounded-lg text-on-surface hover:bg-primary/10 transition-colors"
-        >
-          <span className="material-symbols-outlined">arrow_back</span>
-        </button>
-        <div>
-          <h1 className="text-2xl font-semibold text-on-surface">{workflowName}</h1>
-          <p className="text-on-surface-variant text-sm mt-0.5">{repoName}</p>
+      {/* Hero Header */}
+      <section className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-6 mb-8 border-b border-outline-variant/10">
+        <div className="space-y-3">
+          <nav className="flex items-center gap-2 text-sm text-outline font-medium flex-wrap">
+            <button
+              onClick={() => navigate('/')}
+              className="hover:text-on-surface transition-colors"
+            >
+              Dashboard
+            </button>
+            <span className="material-symbols-outlined text-xs">chevron_right</span>
+            <span>{org}</span>
+            <span className="material-symbols-outlined text-xs">chevron_right</span>
+            <span>{repo}</span>
+            <span className="material-symbols-outlined text-xs">chevron_right</span>
+            <span className="text-on-surface font-semibold">{decodedWorkflow}</span>
+          </nav>
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-primary" style={{ fontSize: '1.75rem' }}>terminal</span>
+            <h1 className="text-3xl font-extrabold tracking-tighter text-on-surface">{decodedWorkflow}</h1>
+          </div>
         </div>
-      </div>
-
-      {/* Stats + Chart */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="md:col-span-1 space-y-3">
-          <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="material-symbols-outlined text-base text-primary">schedule</span>
-              <span className="text-on-surface-variant text-sm">Average Duration</span>
-            </div>
-            <p className="text-on-surface text-lg font-semibold">
+        <div className="flex gap-10 items-end shrink-0">
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] uppercase tracking-widest text-outline mb-1 font-bold">Avg Duration</span>
+            <div className="text-2xl font-mono font-bold text-on-surface">
               {formatDuration(stats?.averageDuration || 0)}
-            </p>
-          </div>
-
-          <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="material-symbols-outlined text-base text-primary">trending_up</span>
-              <span className="text-on-surface-variant text-sm">Success Rate</span>
             </div>
-            <p className="text-on-surface text-lg font-semibold">
-              {stats?.successRate.toFixed(1)}%
-            </p>
           </div>
-
-          <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="material-symbols-outlined text-base text-primary">speed</span>
-              <span className="text-on-surface-variant text-sm">Total Runs</span>
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] uppercase tracking-widest text-outline mb-1 font-bold">Success Rate</span>
+            <div className="text-2xl font-mono font-bold text-secondary">
+              {stats?.successRate?.toFixed(1) ?? '0.0'}%
             </div>
-            <p className="text-on-surface text-lg font-semibold">{stats?.totalRuns || 0}</p>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] uppercase tracking-widest text-outline mb-1 font-bold">Total Runs</span>
+            <div className="text-2xl font-mono font-bold text-primary">
+              {stats?.totalRuns ?? 0}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Chart + Controls Grid */}
+      <div className="grid grid-cols-12 gap-8 mb-8">
+        {/* Activity Chart */}
+        <div className="col-span-12 lg:col-span-8 bg-surface-container-low p-6 rounded-xl border border-outline-variant/5 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none select-none">
+            <span className="material-symbols-outlined" style={{ fontSize: '6rem' }}>show_chart</span>
+          </div>
+          <div className="flex items-center justify-between mb-6 relative z-10">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">insights</span>
+              Activity Trends
+            </h3>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-outline">
+                <span className="w-3 h-3 rounded-full bg-primary" style={{ boxShadow: '0 0 8px rgba(162,201,255,0.4)' }}></span>
+                Total
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-outline">
+                <span className="w-3 h-3 rounded-full bg-secondary" style={{ boxShadow: '0 0 8px rgba(103,223,112,0.4)' }}></span>
+                Success
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-outline">
+                <span className="w-3 h-3 rounded-full bg-error" style={{ boxShadow: '0 0 8px rgba(255,180,171,0.4)' }}></span>
+                Failed
+              </div>
+            </div>
+          </div>
+          <div className="h-48 relative z-10">
+            {stats?.trendsData && <Line data={stats.trendsData} options={chartOptions} />}
           </div>
         </div>
 
-        <div className="md:col-span-3 bg-surface-container-low border border-outline-variant rounded-xl p-4 flex flex-col">
-          <h2 className="text-on-surface text-base font-medium mb-4">Activity Trends</h2>
-          <div className="flex-1 min-h-[200px]">
-            <Line data={stats?.trendsData} options={chartOptions} />
+        {/* Quick Controls */}
+        <div className="col-span-12 lg:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/5 shadow-2xl space-y-6">
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">bolt</span>
+            Quick Controls
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => window.open(`https://github.com/${decodeURIComponent(repoName)}/actions`, '_blank', 'noopener,noreferrer')}
+              className="flex flex-col items-center justify-center p-4 bg-surface-container rounded-lg border border-outline-variant/10 hover:bg-surface-container-high transition-colors group"
+            >
+              <span className="material-symbols-outlined text-primary mb-2 group-hover:scale-110 transition-transform">open_in_new</span>
+              <span className="text-xs font-bold text-on-surface">View on GitHub</span>
+            </button>
+            <button
+              onClick={fetchWorkflowHistory}
+              className="flex flex-col items-center justify-center p-4 bg-surface-container rounded-lg border border-outline-variant/10 hover:bg-surface-container-high transition-colors group"
+            >
+              <span className="material-symbols-outlined text-secondary mb-2 group-hover:scale-110 transition-transform">sync</span>
+              <span className="text-xs font-bold text-on-surface">Refresh</span>
+            </button>
+          </div>
+          <div className="p-4 bg-surface-container-lowest rounded-lg border-l-4 border-primary">
+            <p className="text-[10px] uppercase tracking-widest text-outline mb-1 font-bold">Last Run</p>
+            <p className="text-sm font-bold text-on-surface">
+              {stats?.lastRun ? formatDate(stats.lastRun) : '—'}
+            </p>
+          </div>
+          <div className="space-y-3">
+            <p className="text-[10px] uppercase tracking-widest text-outline font-bold">Summary</p>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-on-surface-variant">Successful</span>
+              <span className="text-xs font-mono font-bold text-secondary">{stats?.successfulRuns ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-on-surface-variant">Failed</span>
+              <span className="text-xs font-mono font-bold text-error">{stats?.failedRuns ?? 0}</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Runs Table */}
-      <div className="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-4">
+            <h3 className="text-lg font-extrabold tracking-tight flex items-center gap-3">
+              <span className="material-symbols-outlined">list_alt</span>
+              Recent Workflow Runs
+            </h3>
+            <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full border border-primary/20">
+              {stats?.totalRuns ?? 0} TOTAL
+            </span>
+          </div>
+          <div className="flex bg-surface-container p-0.5 rounded border border-outline-variant/10">
+            {['all', 'success', 'failure'].map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-3 py-1 rounded-sm text-[10px] font-bold capitalize transition-colors ${
+                  filter === f
+                    ? 'bg-surface-container-high text-primary'
+                    : 'text-outline hover:text-on-surface'
+                }`}
+              >
+                {f === 'all' ? 'All' : f === 'success' ? 'Success' : 'Failure'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="overflow-hidden bg-surface-container-low rounded-lg border border-outline-variant/10 shadow-2xl">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-outline-variant">
-                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Status</th>
-                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Run #</th>
-                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Branch</th>
-                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Event</th>
-                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Labels</th>
-                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Duration</th>
-                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Started</th>
-                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Actions</th>
+              <tr className="bg-surface-container text-outline text-[9px] font-extrabold uppercase tracking-widest border-b border-outline-variant/10">
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Run #</th>
+                <th className="px-4 py-3">Branch</th>
+                <th className="px-4 py-3">Event</th>
+                <th className="px-4 py-3">Labels</th>
+                <th className="px-4 py-3">Duration</th>
+                <th className="px-4 py-3">Started</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {workflowRuns.map((workflow) => (
-                <tr
-                  key={workflow.run.id}
-                  onClick={() => navigate(`/workflow/${workflow.run.id}`)}
-                  className="border-b border-outline-variant/50 cursor-pointer hover:bg-primary/5 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <StatusChip status={workflow.run.status} conclusion={workflow.run.conclusion} />
-                  </td>
-                  <td className="px-4 py-3 text-on-surface">
-                    {workflow.run.number ? `#${workflow.run.number}` : '#-'}
-                  </td>
-                  <td className="px-4 py-3 text-on-surface">
-                    {workflow.run.head_branch || '-'}
-                  </td>
-                  <td className="px-4 py-3 text-on-surface">
-                    {workflow.run.event || '-'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {workflow.run.labels?.map((label, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-0.5 bg-surface-container-high text-on-surface rounded-full text-xs"
-                        >
-                          {label}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-on-surface">
-                    {formatDuration(workflow.run.created_at, workflow.run.updated_at)}
-                  </td>
-                  <td className="px-4 py-3 text-on-surface">
-                    {formatDate(workflow.run.created_at)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(workflow.run.url, '_blank', 'noopener,noreferrer');
-                        }}
-                        className="px-3 py-1 border border-primary/20 text-primary rounded-lg text-xs hover:border-primary/50 hover:bg-primary/10 transition-colors"
-                      >
-                        GitHub
-                      </button>
-                      <button
-                        onClick={(e) => handleSyncRun(e, workflow.run.id)}
-                        disabled={syncingRun === workflow.run.id}
-                        className="px-3 py-1 border border-primary/20 text-primary rounded-lg text-xs hover:border-primary/50 hover:bg-primary/10 disabled:opacity-50 transition-colors"
-                      >
-                        {syncingRun === workflow.run.id ? (
-                          <span className="inline-block w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin" />
-                        ) : 'Sync'}
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteRun(e, workflow.run.id)}
-                        disabled={deletingRun === workflow.run.id}
-                        className="px-3 py-1 border border-error/20 text-error rounded-lg text-xs hover:border-error/50 hover:bg-error/10 disabled:opacity-50 transition-colors"
-                      >
-                        {deletingRun === workflow.run.id ? (
-                          <span className="inline-block w-3 h-3 border border-error border-t-transparent rounded-full animate-spin" />
-                        ) : 'Delete'}
-                      </button>
-                    </div>
+            <tbody className="divide-y divide-outline-variant/10">
+              {filteredRuns.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-outline text-sm">
+                    No runs found
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredRuns.map((workflow) => (
+                  <tr
+                    key={workflow.run.id}
+                    onClick={() => navigate(`/workflow/${workflow.run.id}`)}
+                    className="hover:bg-surface-container/50 transition-colors cursor-pointer group"
+                  >
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        {workflow.run.conclusion === 'success' ? (
+                          <>
+                            <span
+                              className="material-symbols-outlined text-secondary text-lg"
+                              style={{ fontVariationSettings: "'FILL' 1" }}
+                            >
+                              check_circle
+                            </span>
+                            <span className="text-[11px] font-bold text-secondary">Success</span>
+                          </>
+                        ) : workflow.run.conclusion === 'failure' ? (
+                          <>
+                            <span
+                              className="material-symbols-outlined text-error text-lg"
+                              style={{ fontVariationSettings: "'FILL' 1" }}
+                            >
+                              cancel
+                            </span>
+                            <span className="text-[11px] font-bold text-error">Failed</span>
+                          </>
+                        ) : (
+                          <StatusChip status={workflow.run.status} conclusion={workflow.run.conclusion} />
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-[11px] font-bold text-on-surface">
+                      {workflow.run.number ? `#${workflow.run.number}` : '#-'}
+                    </td>
+                    <td className="px-4 py-2.5 text-[11px] text-outline">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <span className="material-symbols-outlined text-xs">account_tree</span>
+                        {workflow.run.head_branch || '-'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-[10px] text-outline font-mono">
+                      {workflow.run.event || '-'}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-wrap gap-1">
+                        {workflow.run.labels?.map((label, index) => (
+                          <span
+                            key={index}
+                            className="px-1.5 py-0.5 bg-surface-container-highest text-[8px] font-bold rounded text-on-surface-variant border border-outline-variant/10"
+                          >
+                            {label}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-[11px] text-on-surface">
+                      {formatDuration(workflow.run.created_at, workflow.run.updated_at)}
+                    </td>
+                    <td className="px-4 py-2.5 text-[10px] text-outline">
+                      {formatDate(workflow.run.created_at)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(workflow.run.url, '_blank', 'noopener,noreferrer');
+                          }}
+                          title="View on GitHub"
+                          className="p-1 hover:bg-surface-container-highest rounded transition-colors text-outline hover:text-primary"
+                        >
+                          <span className="material-symbols-outlined text-xs">open_in_new</span>
+                        </button>
+                        <button
+                          onClick={(e) => handleSyncRun(e, workflow.run.id)}
+                          disabled={syncingRun === workflow.run.id}
+                          title="Sync"
+                          className="p-1 hover:bg-surface-container-highest rounded transition-colors text-outline hover:text-on-surface disabled:opacity-50"
+                        >
+                          {syncingRun === workflow.run.id ? (
+                            <span className="inline-block w-3 h-3 border border-outline border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <span className="material-symbols-outlined text-xs">sync</span>
+                          )}
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteRun(e, workflow.run.id)}
+                          disabled={deletingRun === workflow.run.id}
+                          title="Delete"
+                          className="p-1 hover:bg-surface-container-highest rounded transition-colors text-outline hover:text-error disabled:opacity-50"
+                        >
+                          {deletingRun === workflow.run.id ? (
+                            <span className="inline-block w-3 h-3 border border-error border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <span className="material-symbols-outlined text-xs">delete</span>
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
