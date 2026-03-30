@@ -255,7 +255,7 @@ const RepositoryView = () => {
             <span className="material-symbols-outlined text-sm">chevron_right</span>
             <button
               className="cursor-pointer hover:text-on-surface transition-colors"
-              onClick={() => navigate('/')}
+              onClick={() => navigate(`/?org=${encodeURIComponent(orgName)}`)}
             >
               {orgName}
             </button>

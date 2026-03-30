@@ -183,7 +183,7 @@ const Dashboard = () => {
     return savedConfig ? JSON.parse(savedConfig) : defaultAlertConfig;
   });
   const [longQueuedWorkflows, setLongQueuedWorkflows] = useState({});
-  const [activeOrg, setActiveOrg] = useState(null);
+  const [activeOrg, setActiveOrg] = useState(() => searchParams.get('org') || null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const pageSizeOptions = [30, 50, 100];

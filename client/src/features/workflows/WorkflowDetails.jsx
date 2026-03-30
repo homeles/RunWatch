@@ -200,7 +200,7 @@ const WorkflowDetails = () => {
               <>
                 <span className="material-symbols-outlined text-xs">chevron_right</span>
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate(`/?org=${encodeURIComponent(org)}`)}
                   className="hover:text-on-surface transition-colors"
                 >
                   {org}
