@@ -4,33 +4,6 @@
   min-height: 100vh;
 }
 
-/* Default text color and background for theme compatibility */
-.App {
-  color: #E6EDF3;
-  background-color: #0D1117;
-  min-height: 100vh;
-}
-
-/* Ensure all text follows theme colors */
-.text-primary {
-  color: #E6EDF3;
-}
-
-.text-secondary {
-  color: #8B949E;
-}
-
-/* Utility classes for spacing and layout */
-.full-height {
-  height: 100%;
-}
-
-.flex-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 /* Animation classes */
 .fade-enter {
   opacity: 0;
@@ -48,11 +21,4 @@
 .fade-exit-active {
   opacity: 0;
   transition: opacity 300ms ease-out;
-}
-
-/* Responsive adjustments */
-@media (max-width: 600px) {
-  .App {
-    padding: 0 1rem;
-  }
 }
