@@ -199,14 +199,19 @@ const WorkflowDetails = () => {
             {org && (
               <>
                 <span className="material-symbols-outlined text-xs">chevron_right</span>
-                <span>{org}</span>
+                <button
+                  onClick={() => navigate('/')}
+                  className="hover:text-on-surface transition-colors"
+                >
+                  {org}
+                </button>
               </>
             )}
             {repo && (
               <>
                 <span className="material-symbols-outlined text-xs">chevron_right</span>
                 <button
-                  onClick={() => navigate(-1)}
+                  onClick={() => navigate(`/repository/${encodeURIComponent(workflow.repository?.fullName || '')}`)}
                   className="hover:text-on-surface transition-colors"
                 >
                   {repo}
@@ -217,7 +222,7 @@ const WorkflowDetails = () => {
               <>
                 <span className="material-symbols-outlined text-xs">chevron_right</span>
                 <button
-                  onClick={() => navigate(-1)}
+                  onClick={() => navigate(`/workflow-history/${encodeURIComponent(workflow.repository?.fullName || '')}/${encodeURIComponent(workflow.workflow.name)}`)}
                   className="hover:text-on-surface transition-colors"
                 >
                   {workflow.workflow.name}

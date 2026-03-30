@@ -257,9 +257,19 @@ const WorkflowHistory = () => {
               Dashboard
             </button>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <span>{org}</span>
+            <button
+              onClick={() => navigate('/')}
+              className="hover:text-on-surface transition-colors"
+            >
+              {org}
+            </button>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
-            <span>{repo}</span>
+            <button
+              onClick={() => navigate(`/repository/${encodeURIComponent(decodeURIComponent(repoName))}`)}
+              className="hover:text-on-surface transition-colors"
+            >
+              {repo}
+            </button>
             <span className="material-symbols-outlined text-xs">chevron_right</span>
             <span className="text-on-surface font-semibold">{decodedWorkflow}</span>
           </nav>

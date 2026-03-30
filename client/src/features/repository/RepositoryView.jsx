@@ -246,14 +246,19 @@ const RepositoryView = () => {
       <header className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
         <div className="space-y-2">
           <nav className="flex items-center gap-2 text-outline font-medium uppercase text-[0.7rem] tracking-widest">
-            <span
+            <button
               className="cursor-pointer hover:text-on-surface transition-colors"
               onClick={() => navigate('/')}
             >
               Dashboard
-            </span>
+            </button>
             <span className="material-symbols-outlined text-sm">chevron_right</span>
-            <span>{orgName}</span>
+            <button
+              className="cursor-pointer hover:text-on-surface transition-colors"
+              onClick={() => navigate('/')}
+            >
+              {orgName}
+            </button>
             <span className="material-symbols-outlined text-sm">chevron_right</span>
             <span className="text-on-surface">{repoShortName}</span>
           </nav>
