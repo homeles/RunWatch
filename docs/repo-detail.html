@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Editorial CI/CD | hom-bank/arc-perf-test</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-on-surface": "#2d3137",
+              "on-tertiary-fixed": "#271900",
+              "on-tertiary": "#422c00",
+              "surface-variant": "#31353c",
+              "surface-bright": "#353940",
+              "secondary-fixed": "#83fc89",
+              "outline-variant": "#414752",
+              "surface-tint": "#a2c9ff",
+              "surface-container-high": "#262a31",
+              "tertiary": "#fabc45",
+              "on-primary": "#00315c",
+              "surface-container-lowest": "#0a0e14",
+              "inverse-primary": "#0060aa",
+              "primary-fixed": "#d3e4ff",
+              "on-tertiary-fixed-variant": "#5f4100",
+              "error-container": "#93000a",
+              "on-error": "#690005",
+              "tertiary-container": "#d29922",
+              "primary-container": "#58a6ff",
+              "on-secondary-fixed": "#002105",
+              "surface-container": "#1c2026",
+              "surface-container-low": "#181c22",
+              "on-tertiary-container": "#4d3500",
+              "on-secondary": "#00390d",
+              "inverse-surface": "#dfe2eb",
+              "secondary-fixed-dim": "#67df70",
+              "surface-container-highest": "#31353c",
+              "on-primary-fixed": "#001c38",
+              "secondary": "#67df70",
+              "on-secondary-container": "#00320a",
+              "on-primary-fixed-variant": "#004882",
+              "background": "#10141a",
+              "outline": "#8b919d",
+              "surface": "#10141a",
+              "on-secondary-fixed-variant": "#005317",
+              "primary": "#a2c9ff",
+              "error": "#ffb4ab",
+              "tertiary-fixed": "#ffdeaa",
+              "on-surface": "#dfe2eb",
+              "tertiary-fixed-dim": "#fabc45",
+              "on-background": "#dfe2eb",
+              "on-primary-container": "#003a6b",
+              "on-error-container": "#ffdad6",
+              "primary-fixed-dim": "#a2c9ff",
+              "surface-dim": "#10141a",
+              "on-surface-variant": "#c0c7d4",
+              "secondary-container": "#27a640"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-effect {
+        background: rgba(49, 53, 60, 0.7);
+        backdrop-filter: blur(12px);
+      }
+      .primary-gradient {
+        background: linear-gradient(135deg, #a2c9ff 0%, #58a6ff 100%);
+      }
+      body {
+        background-color: #10141a;
+        color: #dfe2eb;
+      }
+    </style>
+</head>
+<body class="font-body selection:bg-primary-container selection:text-on-primary-fixed antialiased">
+<!-- TopNavBar -->
+<header class="bg-[#10141a] dark:bg-[#10141a] fixed top-0 z-50 flex items-center justify-between px-6 h-16 w-full">
+<div class="flex items-center gap-8">
+<span class="text-lg font-bold tracking-tighter text-[#dfe2eb] dark:text-[#dfe2eb]">Editorial CI/CD</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-[#9499a4] hover:text-[#dfe2eb] transition-colors text-sm font-medium" href="#">Dashboard</a>
+<a class="text-[#a2c9ff] border-b-2 border-[#a2c9ff] pb-1 text-sm font-medium" href="#">Workflows</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline text-sm">search</span>
+<input class="bg-surface-container-highest border-none rounded-lg pl-10 pr-4 py-1.5 text-sm w-64 focus:ring-1 focus:ring-primary/40 focus:bg-surface-bright transition-all" placeholder="Search infrastructure..." type="text"/>
+</div>
+<button class="text-on-surface-variant hover:bg-[#262a31] p-2 rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:bg-[#262a31] p-2 rounded-full transition-all duration-200">
+<span class="material-symbols-outlined">terminal</span>
+</button>
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-outline-variant/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAEAT-CnWO-OJlo9tA6cy-wiqbtI32G0obwRpjoyIrGpPnvMHrEnZ3JpVPYfCHAEw8eHmOtcX3195B2zVYYnDhPancmrY4WR35Mbhf7QYUuiS0RMimioHrH-_pZbGSUeToyzvoRcuNLGqkwKCGeL8Ig9wp--XV6Bsqnq3RIc2trGBT0aiR8Ojc1gZNYJqUZG5F58gBg6AJT1ITFmAKzGoavxCCdOnpwiVa5N_BkpY5rJms9s2lilicP1zv1qGuMOXgUetk0iLNzEAz"/>
+</div>
+</header>
+<!-- SideNavBar (Updated to match SCREEN_25 exactly) -->
+<aside class="w-[240px] h-screen fixed left-0 top-0 bg-[#0a0e14] flex flex-col py-6 px-4 font-inter text-sm antialiased tracking-tight z-[60]">
+<div class="mb-8 px-2">
+<h1 class="text-[#a2c9ff] font-bold tracking-tighter text-xl">RunWatch</h1>
+<p class="text-on-surface-variant/50 text-[10px] uppercase tracking-widest mt-1">V3 Monitoring</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-[#a2c9ff] font-medium border-l-2 border-[#a2c9ff] hover:bg-[#1c2026] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#dfe2eb]/60 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+                Statistics
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#dfe2eb]/60 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="mt-auto space-y-1 pt-6">
+<a class="flex items-center gap-3 px-3 py-2 text-[#dfe2eb]/60 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">help</span>
+                Support
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#dfe2eb]/60 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">description</span>
+                Docs
+            </a>
+<div class="mt-6 flex items-center gap-3 px-3 py-2">
+<img alt="User profile" class="w-8 h-8 rounded-full bg-surface-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQeg2Ls7MjgJYB1zA77--tx02mzYedbD2DtMwFvwstcyBtR1Yh15TKrSwKnOIw2DyoQ_XIxJxNVzh199SU9BiyFGbscFiMri9dGxBcdkt9uQcaKtfkRje2HcEwwpTANRHKEjqK4mo3hq1XZAlxwK9M2wojAJ_XnIUSTQtoDH1RqKU6HuKhWK0h3J-iNGSbTstoU7IouowbO34KWnL27CitpWIQt0ejEkdf2363cSd2rgG1Se9KwklNqaKFVzrlF9fWIsmBiyY3jfT5"/>
+<div class="flex flex-col">
+<span class="text-xs font-semibold">Engineer</span>
+<span class="text-[10px] opacity-50">Admin Access</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-[240px] pt-16 min-h-screen bg-surface p-8">
+<!-- Breadcrumbs & Header -->
+<header class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+<div class="space-y-2">
+<nav class="flex items-center gap-2 text-label-md text-outline font-medium tracking-wide uppercase text-[0.7rem]">
+<span>Dashboard</span>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span>hom-bank</span>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span class="text-on-surface">arc-perf-test</span>
+</nav>
+<div class="flex items-center gap-4">
+<h1 class="text-3xl font-bold tracking-tight text-on-surface">arc-perf-test</h1>
+<span class="bg-secondary-container/20 text-secondary border border-secondary/20 px-2 py-0.5 rounded text-[0.65rem] font-bold uppercase tracking-widest">Active</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-bright transition-all text-sm font-medium border border-outline-variant/10">
+<span class="material-symbols-outlined text-sm">sync</span>
+                    Sync All
+                </button>
+<button class="primary-gradient text-on-primary-fixed px-5 py-2 rounded-lg font-bold text-sm shadow-lg shadow-primary/10 active:scale-95 transition-all">
+                    View Repository
+                </button>
+</div>
+</header>
+<!-- Key Metrics Row -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant/5">
+<p class="text-outline text-xs font-bold uppercase tracking-widest mb-2">Total Runs</p>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-extrabold tracking-tighter text-on-surface">184</span>
+<span class="text-secondary text-xs font-bold">+12%</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant/5">
+<p class="text-outline text-xs font-bold uppercase tracking-widest mb-2">Success Rate</p>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-extrabold tracking-tighter text-secondary">82.6%</span>
+<div class="flex-1 h-1 bg-surface-container-highest rounded-full overflow-hidden ml-4">
+<div class="bg-secondary h-full" style="width: 82.6%"></div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant/5">
+<p class="text-outline text-xs font-bold uppercase tracking-widest mb-2">Failed Runs</p>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-extrabold tracking-tighter text-error">28</span>
+<span class="text-outline-variant text-xs">Last 7d</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant/5">
+<p class="text-outline text-xs font-bold uppercase tracking-widest mb-2">Avg. Duration</p>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-extrabold tracking-tighter text-on-surface">2m 6s</span>
+<span class="material-symbols-outlined text-primary text-lg">timer</span>
+</div>
+</div>
+</div>
+<!-- Charts Row -->
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
+<!-- Main Activity Trend -->
+<div class="lg:col-span-3 bg-surface-container p-8 rounded-xl relative overflow-hidden">
+<div class="flex justify-between items-center mb-10">
+<div>
+<h3 class="text-lg font-bold text-on-surface">30-Day Activity Trends</h3>
+<p class="text-sm text-outline">Frequency of CI/CD executions and build density</p>
+</div>
+<div class="flex gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="text-[0.65rem] font-bold uppercase text-outline">Runs / Day</span>
+</div>
+</div>
+<div class="h-48 w-full relative">
+<svg class="w-full h-full overflow-visible" viewbox="0 0 1000 200">
+<defs>
+<lineargradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#a2c9ff" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#a2c9ff" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,180 L50,160 L100,170 L150,120 L200,140 L250,90 L300,110 L350,50 L400,80 L450,100 L500,40 L550,60 L600,130 L650,110 L700,140 L750,90 L800,70 L850,50 L900,30 L950,45 L1000,20" fill="none" stroke="#a2c9ff" stroke-linecap="round" stroke-width="3"></path>
+<path d="M0,180 L50,160 L100,170 L150,120 L200,140 L250,90 L300,110 L350,50 L400,80 L450,100 L500,40 L550,60 L600,130 L650,110 L700,140 L750,90 L800,70 L850,50 L900,30 L950,45 L1000,20 L1000,200 L0,200 Z" fill="url(#chartGradient)"></path>
+<line stroke="#414752" stroke-dasharray="4" stroke-opacity="0.2" x1="0" x2="1000" y1="50" y2="50"></line>
+<line stroke="#414752" stroke-dasharray="4" stroke-opacity="0.2" x1="0" x2="1000" y1="100" y2="100"></line>
+<line stroke="#414752" stroke-dasharray="4" stroke-opacity="0.2" x1="0" x2="1000" y1="150" y2="150"></line>
+</svg>
+<div class="absolute bottom-0 left-0 right-0 flex justify-between px-2 pt-4 text-[0.6rem] font-bold text-outline-variant uppercase tracking-widest">
+<span>Day 01</span>
+<span>Day 15</span>
+<span>Today</span>
+</div>
+</div>
+</div>
+<!-- Workflow Comparison -->
+<div class="bg-surface-container p-8 rounded-xl">
+<h3 class="text-sm font-bold text-on-surface mb-6 uppercase tracking-widest">Workflow Stats</h3>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between text-[0.65rem] font-bold text-outline mb-2 uppercase">
+<span>Success Rate</span>
+<span class="text-secondary">82.6%</span>
+</div>
+<div class="h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="bg-secondary h-full" style="width: 82.6%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[0.65rem] font-bold text-outline mb-2 uppercase">
+<span>Reliability Index</span>
+<span class="text-primary">94.2%</span>
+</div>
+<div class="h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="bg-primary h-full" style="width: 94.2%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[0.65rem] font-bold text-outline mb-2 uppercase">
+<span>Resource Usage</span>
+<span class="text-tertiary">61.0%</span>
+</div>
+<div class="h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="bg-tertiary h-full" style="width: 61%"></div>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-outline-variant/10">
+<p class="text-[0.65rem] text-outline leading-relaxed italic">"Performance is trending 4% higher than the organization baseline."</p>
+</div>
+</div>
+</div>
+<!-- Workflows List Section -->
+<section class="space-y-4">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-bold text-on-surface">Active Workflows</h2>
+<div class="flex gap-4 items-center">
+<span class="text-xs text-outline font-medium">9 Results</span>
+<button class="text-primary text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+                        Filter
+                    </button>
+</div>
+</div>
+<div class="space-y-2">
+<!-- Parallel Jobs -->
+<div class="flex items-center gap-6 bg-surface-container-low hover:bg-surface-container transition-all px-6 py-4 rounded-lg group">
+<div class="w-1 h-8 bg-secondary rounded-full"></div>
+<div class="flex-1">
+<h4 class="text-on-surface font-semibold text-sm group-hover:text-primary transition-colors">Parallel Jobs</h4>
+<p class="text-outline text-xs mt-0.5">ci-parallel.yml</p>
+</div>
+<div class="flex flex-col items-end min-w-[100px]">
+<span class="text-secondary text-xs font-bold">100.0%</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Success</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">13</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Runs</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">50s</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Dur</span>
+</div>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Scheduled -->
+<div class="flex items-center gap-6 bg-surface-container-low hover:bg-surface-container transition-all px-6 py-4 rounded-lg group">
+<div class="w-1 h-8 bg-secondary rounded-full"></div>
+<div class="flex-1">
+<h4 class="text-on-surface font-semibold text-sm group-hover:text-primary transition-colors">Scheduled</h4>
+<p class="text-outline text-xs mt-0.5">cron-perf.yml</p>
+</div>
+<div class="flex flex-col items-end min-w-[100px]">
+<span class="text-secondary text-xs font-bold">100.0%</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Success</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">4</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Runs</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">59s</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Dur</span>
+</div>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Push on main -->
+<div class="flex items-center gap-6 bg-surface-container-low hover:bg-surface-container transition-all px-6 py-4 rounded-lg group">
+<div class="w-1 h-8 bg-secondary rounded-full"></div>
+<div class="flex-1">
+<h4 class="text-on-surface font-semibold text-sm group-hover:text-primary transition-colors">Push on main</h4>
+<p class="text-outline text-xs mt-0.5">main-branch.yml</p>
+</div>
+<div class="flex flex-col items-end min-w-[100px]">
+<span class="text-secondary text-xs font-bold">100.0%</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Success</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">2</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Runs</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">58s</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Dur</span>
+</div>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- CodeQL Setup -->
+<div class="flex items-center gap-6 bg-surface-container-low hover:bg-surface-container transition-all px-6 py-4 rounded-lg group">
+<div class="w-1 h-8 bg-secondary rounded-full"></div>
+<div class="flex-1">
+<h4 class="text-on-surface font-semibold text-sm group-hover:text-primary transition-colors">CodeQL Setup</h4>
+<p class="text-outline text-xs mt-0.5">security.yml</p>
+</div>
+<div class="flex flex-col items-end min-w-[100px]">
+<span class="text-secondary text-xs font-bold">100.0%</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Success</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">1</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Runs</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">55s</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Dur</span>
+</div>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Maven Build -->
+<div class="flex items-center gap-6 bg-surface-container-low hover:bg-surface-container transition-all px-6 py-4 rounded-lg group">
+<div class="w-1 h-8 bg-tertiary rounded-full"></div>
+<div class="flex-1">
+<h4 class="text-on-surface font-semibold text-sm group-hover:text-primary transition-colors">Maven Build - .m2 Cache Comparison</h4>
+<p class="text-outline text-xs mt-0.5">build-cache.yml</p>
+</div>
+<div class="flex flex-col items-end min-w-[100px]">
+<span class="text-tertiary text-xs font-bold">47.1%</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Success</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">17</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Runs</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">1m 44s</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Dur</span>
+</div>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Runner Strategy -->
+<div class="flex items-center gap-6 bg-surface-container-low hover:bg-surface-container transition-all px-6 py-4 rounded-lg group">
+<div class="w-1 h-8 bg-tertiary rounded-full"></div>
+<div class="flex-1">
+<h4 class="text-on-surface font-semibold text-sm group-hover:text-primary transition-colors">Runner Assignment Strategy Test</h4>
+<p class="text-outline text-xs mt-0.5">runners.yml</p>
+</div>
+<div class="flex flex-col items-end min-w-[100px]">
+<span class="text-tertiary text-xs font-bold">67.4%</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Success</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">46</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Runs</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">5m 12s</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Dur</span>
+</div>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Failed workflow -->
+<div class="flex items-center gap-6 bg-surface-container-low hover:bg-surface-container transition-all px-6 py-4 rounded-lg group">
+<div class="w-1 h-8 bg-error rounded-full"></div>
+<div class="flex-1">
+<h4 class="text-on-surface font-semibold text-sm group-hover:text-primary transition-colors">.github/workflows/mvn-perf-test.yml</h4>
+<p class="text-outline text-xs mt-0.5">mvn-perf-test.yml</p>
+</div>
+<div class="flex flex-col items-end min-w-[100px]">
+<span class="text-error text-xs font-bold">0.0%</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Success</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">1</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Runs</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">0s</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Dur</span>
+</div>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Integration Tests -->
+<div class="flex items-center gap-6 bg-surface-container-low hover:bg-surface-container transition-all px-6 py-4 rounded-lg group">
+<div class="w-1 h-8 bg-secondary rounded-full"></div>
+<div class="flex-1">
+<h4 class="text-on-surface font-semibold text-sm group-hover:text-primary transition-colors">E2E Integration Flow</h4>
+<p class="text-outline text-xs mt-0.5">e2e.yml</p>
+</div>
+<div class="flex flex-col items-end min-w-[100px]">
+<span class="text-secondary text-xs font-bold">94.8%</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Success</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">58</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Runs</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">12m 30s</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Dur</span>
+</div>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+<!-- Docker Build -->
+<div class="flex items-center gap-6 bg-surface-container-low hover:bg-surface-container transition-all px-6 py-4 rounded-lg group">
+<div class="w-1 h-8 bg-secondary rounded-full"></div>
+<div class="flex-1">
+<h4 class="text-on-surface font-semibold text-sm group-hover:text-primary transition-colors">Container Image Optimization</h4>
+<p class="text-outline text-xs mt-0.5">docker.yml</p>
+</div>
+<div class="flex flex-col items-end min-w-[100px]">
+<span class="text-secondary text-xs font-bold">100.0%</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Success</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">42</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Runs</span>
+</div>
+<div class="flex flex-col items-end min-w-[80px]">
+<span class="text-on-surface text-xs font-bold">2m 14s</span>
+<span class="text-outline-variant text-[0.65rem] uppercase">Dur</span>
+</div>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Footer Metric Detail -->
+<section class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 md:col-span-2 flex items-center justify-between">
+<div>
+<h4 class="text-sm font-bold uppercase tracking-widest text-outline mb-1">Queue Health</h4>
+<p class="text-2xl font-bold text-on-surface">Stable <span class="text-secondary text-sm font-medium ml-2">(-1.2s latency)</span></p>
+<div class="mt-4 flex gap-1">
+<div class="w-4 h-8 bg-secondary/40 rounded-sm"></div>
+<div class="w-4 h-8 bg-secondary/60 rounded-sm"></div>
+<div class="w-4 h-8 bg-secondary/30 rounded-sm"></div>
+<div class="w-4 h-8 bg-secondary/70 rounded-sm"></div>
+<div class="w-4 h-8 bg-secondary/50 rounded-sm"></div>
+<div class="w-4 h-8 bg-secondary/80 rounded-sm"></div>
+<div class="w-4 h-8 bg-primary rounded-sm"></div>
+<div class="w-4 h-8 bg-secondary/60 rounded-sm"></div>
+<div class="w-4 h-8 bg-secondary/40 rounded-sm"></div>
+<div class="w-4 h-8 bg-secondary/90 rounded-sm"></div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-[0.65rem] font-bold text-outline-variant uppercase mb-2">Next Scheduled Run</p>
+<p class="text-lg font-mono text-on-surface">04:00 UTC</p>
+<p class="text-xs text-outline mt-1">Daily Automated Suite</p>
+</div>
+</div>
+<div class="bg-surface-container p-6 rounded-xl border border-outline-variant/10 flex flex-col justify-center items-center text-center">
+<span class="material-symbols-outlined text-4xl text-primary mb-2" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<h4 class="text-sm font-bold text-on-surface uppercase tracking-widest">Full Report</h4>
+<p class="text-xs text-outline mt-1 mb-4 px-4">Download comprehensive PDF analysis of this repository's CI velocity.</p>
+<button class="w-full py-2 bg-surface-container-high hover:bg-surface-bright rounded text-[0.65rem] font-bold uppercase tracking-wider transition-all">Download .PDF</button>
+</div>
+</section>
+</main>
+</body></html>

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Statistics | Editorial CI/CD Monitoring</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-fixed": "#d3e4ff",
+                        "secondary-fixed": "#83fc89",
+                        "on-tertiary": "#422c00",
+                        "on-secondary-fixed-variant": "#005317",
+                        "on-error": "#690005",
+                        "background": "#10141a",
+                        "tertiary": "#fabc45",
+                        "on-secondary": "#00390d",
+                        "on-tertiary-container": "#4d3500",
+                        "surface-container-high": "#262a31",
+                        "primary-fixed-dim": "#a2c9ff",
+                        "on-tertiary-fixed": "#271900",
+                        "surface-dim": "#10141a",
+                        "surface-container-low": "#181c22",
+                        "on-surface-variant": "#c0c7d4",
+                        "surface-container-highest": "#31353c",
+                        "inverse-on-surface": "#2d3137",
+                        "secondary-container": "#27a640",
+                        "primary-container": "#58a6ff",
+                        "surface": "#10141a",
+                        "surface-bright": "#353940",
+                        "on-surface": "#dfe2eb",
+                        "on-primary-container": "#003a6b",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#67df70",
+                        "on-primary-fixed": "#001c38",
+                        "surface-variant": "#31353c",
+                        "primary": "#a2c9ff",
+                        "tertiary-container": "#d29922",
+                        "on-primary": "#00315c",
+                        "surface-container-lowest": "#0a0e14",
+                        "error": "#ffb4ab",
+                        "on-primary-fixed-variant": "#004882",
+                        "on-secondary-fixed": "#002105",
+                        "surface-container": "#1c2026",
+                        "on-background": "#dfe2eb",
+                        "inverse-primary": "#0060aa",
+                        "tertiary-fixed": "#ffdeaa",
+                        "outline-variant": "#414752",
+                        "outline": "#8b919d",
+                        "secondary": "#67df70",
+                        "on-tertiary-fixed-variant": "#5f4100",
+                        "surface-tint": "#a2c9ff",
+                        "on-error-container": "#ffdad6",
+                        "inverse-surface": "#dfe2eb",
+                        "tertiary-fixed-dim": "#fabc45",
+                        "on-secondary-container": "#00320a"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(49, 53, 60, 0.7);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- Sidebar Navigation -->
+<aside class="bg-[#0a0e14] dark:bg-[#0a0e14] flex flex-col py-8 h-full w-[240px] border-r border-[#414752]/10 h-screen fixed left-0 top-0 z-50">
+<div class="px-6 mb-12">
+<h1 class="text-xl font-black tracking-tighter text-[#a2c9ff]">Editorial</h1>
+<p class="text-[10px] text-outline font-bold tracking-[0.2em] uppercase mt-1">Monitoring Suite</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-6 py-3 text-[#dfe2eb]/50 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-all duration-200 group active:translate-x-1" href="#">
+<span class="material-symbols-outlined mr-3 text-xl" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-medium font-inter tracking-wide uppercase">Dashboard</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#a2c9ff] border-l-2 border-[#a2c9ff] bg-transparent transition-all duration-200 group active:translate-x-1" href="#">
+<span class="material-symbols-outlined mr-3 text-xl" data-icon="bar_chart">bar_chart</span>
+<span class="text-sm font-medium font-inter tracking-wide uppercase">Statistics</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#dfe2eb]/50 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-all duration-200 group active:translate-x-1" href="#">
+<span class="material-symbols-outlined mr-3 text-xl" data-icon="settings">settings</span>
+<span class="text-sm font-medium font-inter tracking-wide uppercase">Settings</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant/10 pt-4 space-y-1">
+<a class="flex items-center px-6 py-3 text-[#dfe2eb]/50 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-all duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-xl" data-icon="contact_support">contact_support</span>
+<span class="text-sm font-medium font-inter tracking-wide uppercase">Support</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#dfe2eb]/50 hover:text-[#dfe2eb] hover:bg-[#1c2026] transition-all duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-xl" data-icon="terminal">terminal</span>
+<span class="text-sm font-medium font-inter tracking-wide uppercase">Logs</span>
+</a>
+</div>
+</aside>
+<!-- Top Navigation Bar -->
+<header class="bg-[#10141a] dark:bg-[#10141a] flex justify-between items-center px-6 w-full sticky top-0 z-40 h-16 border-b border-[#414752]/20 ml-[240px] w-[calc(100%-240px)]">
+<div class="flex items-center space-x-4">
+<span class="text-[#dfe2eb]/60 text-xs font-medium tracking-widest uppercase">Overview</span>
+<span class="material-symbols-outlined text-outline text-sm" data-icon="chevron_right">chevron_right</span>
+<span class="text-[#a2c9ff] text-xs font-semibold tracking-widest uppercase">Statistics</span>
+</div>
+<div class="flex items-center space-x-6">
+<div class="relative group">
+<span class="material-symbols-outlined text-[#dfe2eb]/60 hover:text-[#a2c9ff] cursor-pointer transition-colors" data-icon="notifications">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 bg-secondary rounded-full border-2 border-background"></span>
+</div>
+<span class="material-symbols-outlined text-[#dfe2eb]/60 hover:text-[#a2c9ff] cursor-pointer transition-colors" data-icon="help_outline">help_outline</span>
+<div class="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/30 hover:border-primary/50 transition-colors cursor-pointer">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="close-up portrait of a professional man in a minimalist office setting with clean architectural lines and soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1BbTUehltXcmdNldVK1dAoUYrMNYY4IVOZMajMAEEobhv67IgnOOguQXGzr_hZT47mopuCmG1tH1NFcjYwUTaZ476s7feva5HR2K-D3FTbH_xpCLRdBgVQTIKQBOk07pH0Diirlp6a0TpCRjQy3uaF-6KWO__ROvmGI2KYRFHo1G1l1RIj2DnK7MO8zsKJv4pKJa-YqZXRl86sAP2fKwm1A_u9mLvT3yTniOuSz9UEFozDe5XXHtCUrjS8m76U1zwc5uat64s1RC7"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[240px] p-8 max-w-[1600px]">
+<!-- Header Section -->
+<header class="mb-10">
+<h2 class="text-3xl font-extrabold tracking-tight text-on-surface mb-2">Statistics</h2>
+<p class="text-outline text-sm">System-wide performance metrics and velocity analysis for Editorial CI/CD pipelines.</p>
+</header>
+<!-- KPI Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+<!-- Metric 1 -->
+<div class="bg-surface-container-low p-6 rounded-lg relative overflow-hidden group border-l-4 border-primary">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs font-bold text-outline tracking-widest uppercase mb-1">Total Organizations</p>
+<h3 class="text-4xl font-black text-on-surface tracking-tighter">1</h3>
+</div>
+<span class="material-symbols-outlined text-primary/20 text-4xl" data-icon="corporate_fare">corporate_fare</span>
+</div>
+<div class="mt-4 flex items-center text-xs text-secondary font-medium">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="trending_up">trending_up</span>
+<span>Stable enterprise context</span>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface-container-low p-6 rounded-lg relative overflow-hidden group border-l-4 border-secondary">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs font-bold text-outline tracking-widest uppercase mb-1">Total Repositories</p>
+<h3 class="text-4xl font-black text-on-surface tracking-tighter">17</h3>
+</div>
+<span class="material-symbols-outlined text-secondary/20 text-4xl" data-icon="folder_zip">folder_zip</span>
+</div>
+<div class="mt-4 flex items-center text-xs text-primary font-medium">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="add">add</span>
+<span>2 new this month</span>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface-container-low p-6 rounded-lg relative overflow-hidden group border-l-4 border-tertiary">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs font-bold text-outline tracking-widest uppercase mb-1">Total Workflow Runs</p>
+<h3 class="text-4xl font-black text-on-surface tracking-tighter">1,238</h3>
+</div>
+<span class="material-symbols-outlined text-tertiary/20 text-4xl" data-icon="rocket_launch">rocket_launch</span>
+</div>
+<div class="mt-4 flex items-center text-xs text-secondary font-medium">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="insights">insights</span>
+<span>94.2% success rate avg</span>
+</div>
+</div>
+</div>
+<!-- Large Chart: Organization Overview -->
+<section class="bg-surface-container mb-10 rounded-lg p-8">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h4 class="text-lg font-bold text-on-surface">Organization Overview: hom-bank</h4>
+<p class="text-xs text-outline uppercase tracking-widest mt-1">Aggregate Health &amp; Reliability Index</p>
+</div>
+<div class="flex items-center space-x-6">
+<div class="flex items-center space-x-2">
+<span class="w-3 h-3 rounded-full bg-secondary"></span>
+<span class="text-xs text-outline font-semibold uppercase">Success</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="w-3 h-3 rounded-full bg-error"></span>
+<span class="text-xs text-outline font-semibold uppercase">Failure</span>
+</div>
+</div>
+</div>
+<div class="h-[300px] flex items-end justify-between space-x-4">
+<!-- Data bars (Mocked visualization) -->
+<div class="flex-1 flex flex-col justify-end space-y-1">
+<div class="bg-secondary/20 rounded-t w-full h-[85%] relative group transition-all">
+<div class="absolute bottom-0 left-0 w-full h-full bg-secondary transition-all rounded-t"></div>
+</div>
+<div class="bg-error/40 rounded-b w-full h-[5%]"></div>
+<span class="text-[10px] text-outline text-center mt-2 font-mono">MON</span>
+</div>
+<div class="flex-1 flex flex-col justify-end space-y-1">
+<div class="bg-secondary/20 rounded-t w-full h-[92%] relative group">
+<div class="absolute bottom-0 left-0 w-full h-full bg-secondary/90 rounded-t"></div>
+</div>
+<div class="bg-error/40 rounded-b w-full h-[3%]"></div>
+<span class="text-[10px] text-outline text-center mt-2 font-mono">TUE</span>
+</div>
+<div class="flex-1 flex flex-col justify-end space-y-1">
+<div class="bg-secondary/20 rounded-t w-full h-[78%] relative group">
+<div class="absolute bottom-0 left-0 w-full h-full bg-secondary/80 rounded-t"></div>
+</div>
+<div class="bg-error/40 rounded-b w-full h-[12%]"></div>
+<span class="text-[10px] text-outline text-center mt-2 font-mono">WED</span>
+</div>
+<div class="flex-1 flex flex-col justify-end space-y-1">
+<div class="bg-secondary/20 rounded-t w-full h-[88%] relative group">
+<div class="absolute bottom-0 left-0 w-full h-full bg-secondary/95 rounded-t"></div>
+</div>
+<div class="bg-error/40 rounded-b w-full h-[4%]"></div>
+<span class="text-[10px] text-outline text-center mt-2 font-mono">THU</span>
+</div>
+<div class="flex-1 flex flex-col justify-end space-y-1">
+<div class="bg-secondary/20 rounded-t w-full h-[94%] relative group">
+<div class="absolute bottom-0 left-0 w-full h-full bg-secondary rounded-t"></div>
+</div>
+<div class="bg-error/40 rounded-b w-full h-[2%]"></div>
+<span class="text-[10px] text-outline text-center mt-2 font-mono">FRI</span>
+</div>
+<div class="flex-1 flex flex-col justify-end space-y-1">
+<div class="bg-secondary/20 rounded-t w-full h-[40%] relative group">
+<div class="absolute bottom-0 left-0 w-full h-full bg-secondary/60 rounded-t"></div>
+</div>
+<div class="bg-error/40 rounded-b w-full h-[1%]"></div>
+<span class="text-[10px] text-outline text-center mt-2 font-mono">SAT</span>
+</div>
+<div class="flex-1 flex flex-col justify-end space-y-1">
+<div class="bg-secondary/20 rounded-t w-full h-[35%] relative group">
+<div class="absolute bottom-0 left-0 w-full h-full bg-secondary/50 rounded-t"></div>
+</div>
+<div class="bg-error/40 rounded-b w-full h-[2%]"></div>
+<span class="text-[10px] text-outline text-center mt-2 font-mono">SUN</span>
+</div>
+</div>
+</section>
+<!-- Dual Column metrics -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+<!-- Success Rates by Organization -->
+<div class="bg-surface-container-low p-8 rounded-lg">
+<h4 class="text-sm font-bold text-outline uppercase tracking-[0.2em] mb-8">Success Rates by Organization</h4>
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<span class="text-sm font-bold text-on-surface">hom-bank</span>
+<span class="text-xs font-mono text-secondary">92.4%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary" style="width: 92.4%"></div>
+</div>
+</div>
+<div class="space-y-2 opacity-50">
+<div class="flex justify-between items-end">
+<span class="text-sm font-bold text-on-surface">External-API-v2</span>
+<span class="text-xs font-mono text-secondary">88.1%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-secondary" style="width: 88.1%"></div>
+</div>
+</div>
+<div class="space-y-2 opacity-40">
+<div class="flex justify-between items-end">
+<span class="text-sm font-bold text-on-surface">Legacy-Mainframe</span>
+<span class="text-xs font-mono text-error">42.8%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-error" style="width: 42.8%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Weekly Activity Trend -->
+<div class="bg-surface-container-low p-8 rounded-lg">
+<h4 class="text-sm font-bold text-outline uppercase tracking-[0.2em] mb-8">Weekly Activity Trend</h4>
+<div class="relative h-[160px] w-full mt-4">
+<!-- SVG for Line Chart -->
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 400 100">
+<path d="M0,80 Q50,20 100,50 T200,30 T300,60 T400,10" fill="none" stroke="#a2c9ff" stroke-width="2.5"></path>
+<path d="M0,80 Q50,20 100,50 T200,30 T300,60 T400,10 V100 H0 Z" fill="url(#blue-grad)" opacity="0.1"></path>
+<defs>
+<lineargradient id="blue-grad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#a2c9ff"></stop>
+<stop offset="100%" stop-color="transparent"></stop>
+</lineargradient>
+</defs>
+</svg>
+<!-- Indicators -->
+<div class="absolute top-4 right-4 bg-surface-container-high px-3 py-1.5 rounded-md border border-outline-variant/20 shadow-xl flex items-center space-x-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="text-[10px] font-bold text-on-surface">Peak: 242 runs/hr</span>
+</div>
+</div>
+<div class="flex justify-between mt-4 px-2">
+<span class="text-[9px] font-mono text-outline">Oct 12</span>
+<span class="text-[9px] font-mono text-outline">Oct 19</span>
+</div>
+</div>
+</div>
+<!-- Repository Breakdown Table -->
+<section class="bg-surface-container rounded-lg overflow-hidden border border-outline-variant/10">
+<div class="px-8 py-6 border-b border-outline-variant/10 flex justify-between items-center">
+<div>
+<h4 class="text-lg font-bold text-on-surface">Repository Breakdown</h4>
+<p class="text-xs text-outline uppercase tracking-widest mt-0.5">Performance Granularity</p>
+</div>
+<div class="flex items-center text-xs text-outline bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant/10">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="filter_list">filter_list</span>
+<span>Sort by Success Rate</span>
+</div>
+</div>
+<table class="w-full text-left">
+<thead class="bg-surface-container-low/50">
+<tr>
+<th class="px-8 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Repository Name</th>
+<th class="px-8 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">Success Rate</th>
+<th class="px-8 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Total Runs</th>
+<th class="px-8 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">Repos Count</th>
+<th class="px-8 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-right">Avg Duration</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- hom-bank -->
+<tr class="hover:bg-surface-container-high transition-colors group cursor-default">
+<td class="px-8 py-5">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-outline text-lg mr-3" data-icon="terminal">terminal</span>
+<span class="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">hom-bank</span>
+</div>
+</td>
+<td class="px-8 py-5">
+<div class="flex items-center space-x-3">
+<span class="text-sm font-mono text-secondary">98.2%</span>
+<div class="w-16 h-1 bg-surface-container-highest rounded-full">
+<div class="h-full bg-secondary" style="width: 98.2%"></div>
+</div>
+</div>
+</td>
+<td class="px-8 py-5 text-center text-sm font-mono text-outline">412</td>
+<td class="px-8 py-5 text-center text-sm font-mono text-outline">1</td>
+<td class="px-8 py-5 text-right text-sm font-mono text-on-surface">2m 14s</td>
+</tr>
+<!-- supermarket-dotnet -->
+<tr class="hover:bg-surface-container-high transition-colors group cursor-default">
+<td class="px-8 py-5">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-outline text-lg mr-3" data-icon="code">code</span>
+<span class="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">supermarket-dotnet</span>
+</div>
+</td>
+<td class="px-8 py-5">
+<div class="flex items-center space-x-3">
+<span class="text-sm font-mono text-secondary">94.5%</span>
+<div class="w-16 h-1 bg-surface-container-highest rounded-full">
+<div class="h-full bg-secondary" style="width: 94.5%"></div>
+</div>
+</div>
+</td>
+<td class="px-8 py-5 text-center text-sm font-mono text-outline">285</td>
+<td class="px-8 py-5 text-center text-sm font-mono text-outline">1</td>
+<td class="px-8 py-5 text-right text-sm font-mono text-on-surface">4m 32s</td>
+</tr>
+<!-- migrationsv3 -->
+<tr class="hover:bg-surface-container-high transition-colors group cursor-default">
+<td class="px-8 py-5">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-outline text-lg mr-3" data-icon="database">database</span>
+<span class="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">migrationsv3</span>
+</div>
+</td>
+<td class="px-8 py-5">
+<div class="flex items-center space-x-3">
+<span class="text-sm font-mono text-secondary">91.8%</span>
+<div class="w-16 h-1 bg-surface-container-highest rounded-full">
+<div class="h-full bg-secondary" style="width: 91.8%"></div>
+</div>
+</div>
+</td>
+<td class="px-8 py-5 text-center text-sm font-mono text-outline">156</td>
+<td class="px-8 py-5 text-center text-sm font-mono text-outline">3</td>
+<td class="px-8 py-5 text-right text-sm font-mono text-on-surface">12m 08s</td>
+</tr>
+<!-- arc-perf-test -->
+<tr class="hover:bg-surface-container-high transition-colors group cursor-default">
+<td class="px-8 py-5">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-outline text-lg mr-3" data-icon="speed">speed</span>
+<span class="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">arc-perf-test</span>
+</div>
+</td>
+<td class="px-8 py-5">
+<div class="flex items-center space-x-3">
+<span class="text-sm font-mono text-error">76.4%</span>
+<div class="w-16 h-1 bg-surface-container-highest rounded-full">
+<div class="h-full bg-error" style="width: 76.4%"></div>
+</div>
+</div>
+</td>
+<td class="px-8 py-5 text-center text-sm font-mono text-outline">82</td>
+<td class="px-8 py-5 text-center text-sm font-mono text-outline">1</td>
+<td class="px-8 py-5 text-right text-sm font-mono text-on-surface">45m 12s</td>
+</tr>
+<!-- workflow-library -->
+<tr class="hover:bg-surface-container-high transition-colors group cursor-default">
+<td class="px-8 py-5 border-transparent">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-outline text-lg mr-3" data-icon="library_books">library_books</span>
+<span class="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">workflow-library</span>
+</div>
+</td>
+<td class="px-8 py-5">
+<div class="flex items-center space-x-3">
+<span class="text-sm font-mono text-secondary">100%</span>
+<div class="w-16 h-1 bg-surface-container-highest rounded-full">
+<div class="h-full bg-secondary" style="width: 100%"></div>
+</div>
+</div>
+</td>
+<td class="px-8 py-5 text-center text-sm font-mono text-outline">303</td>
+<td class="px-8 py-5 text-center text-sm font-mono text-outline">11</td>
+<td class="px-8 py-5 text-right text-sm font-mono text-on-surface">0m 45s</td>
+</tr>
+</tbody>
+</table>
+</section>
+</main>
+<!-- Footer Decorative Grain -->
+<div class="fixed bottom-0 left-0 w-full h-1 pointer-events-none opacity-20 bg-gradient-to-r from-primary via-secondary to-tertiary"></div>
+</body></html>

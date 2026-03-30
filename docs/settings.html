@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RunWatch - Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-fixed-dim": "#67df70",
+              "outline-variant": "#414752",
+              "tertiary-fixed": "#ffdeaa",
+              "surface-container-low": "#181c22",
+              "primary-container": "#58a6ff",
+              "inverse-primary": "#0060aa",
+              "surface-bright": "#353940",
+              "on-tertiary-container": "#4d3500",
+              "secondary-container": "#27a640",
+              "surface-container-lowest": "#0a0e14",
+              "tertiary-container": "#d29922",
+              "primary-fixed-dim": "#a2c9ff",
+              "on-background": "#dfe2eb",
+              "on-secondary-fixed-variant": "#005317",
+              "surface-dim": "#10141a",
+              "surface-container-highest": "#31353c",
+              "secondary-fixed": "#83fc89",
+              "secondary": "#67df70",
+              "surface-tint": "#a2c9ff",
+              "on-primary-fixed-variant": "#004882",
+              "error": "#ffb4ab",
+              "inverse-surface": "#dfe2eb",
+              "tertiary": "#fabc45",
+              "on-tertiary-fixed": "#271900",
+              "on-error-container": "#ffdad6",
+              "on-error": "#690005",
+              "primary-fixed": "#d3e4ff",
+              "on-surface": "#dfe2eb",
+              "surface-container": "#1c2026",
+              "surface": "#10141a",
+              "on-secondary": "#00390d",
+              "on-primary-container": "#003a6b",
+              "on-primary-fixed": "#001c38",
+              "error-container": "#93000a",
+              "surface-container-high": "#262a31",
+              "on-secondary-container": "#00320a",
+              "on-secondary-fixed": "#002105",
+              "tertiary-fixed-dim": "#fabc45",
+              "background": "#10141a",
+              "outline": "#8b919d",
+              "on-surface-variant": "#c0c7d4",
+              "on-primary": "#00315c",
+              "on-tertiary-fixed-variant": "#5f4100",
+              "on-tertiary": "#422c00",
+              "primary": "#a2c9ff",
+              "surface-variant": "#31353c",
+              "inverse-on-surface": "#2d3137"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        vertical-align: middle;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #0a0e14;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #414752;
+        border-radius: 10px;
+      }
+      .glass-card {
+        background: rgba(49, 53, 60, 0.7);
+        backdrop-filter: blur(12px);
+      }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container min-h-screen flex">
+<!-- SideNavBar Component -->
+<aside class="w-[240px] h-screen sticky top-0 left-0 bg-[#0a0e14] flex flex-col py-6 z-50">
+<div class="px-6 mb-10">
+<h1 class="text-xl font-bold tracking-tighter text-[#dfe2eb] flex items-center gap-2">
+<span class="w-2 h-8 bg-gradient-to-b from-primary to-primary-container rounded-full"></span>
+                RunWatch
+            </h1>
+<p class="text-[10px] text-outline uppercase tracking-[0.2em] mt-1 font-semibold">Editorial CI/CD</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-6 py-3 text-[#9499a4] hover:text-[#dfe2eb] hover:bg-[#181c22] transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-lg" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-medium tracking-tight">Dashboard</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#9499a4] hover:text-[#dfe2eb] hover:bg-[#181c22] transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-lg" data-icon="account_tree">account_tree</span>
+<span class="text-sm font-medium tracking-tight">Workflows</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#9499a4] hover:text-[#dfe2eb] hover:bg-[#181c22] transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-lg" data-icon="monitoring">monitoring</span>
+<span class="text-sm font-medium tracking-tight">Metrics</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#a2c9ff] border-l-2 border-[#a2c9ff] font-semibold bg-[#181c22]/50 group" href="#">
+<span class="material-symbols-outlined mr-3 text-lg" data-icon="settings">settings</span>
+<span class="text-sm tracking-tight">Settings</span>
+</a>
+<a class="flex items-center px-6 py-3 text-[#9499a4] hover:text-[#dfe2eb] hover:bg-[#181c22] transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined mr-3 text-lg" data-icon="description">description</span>
+<span class="text-sm font-medium tracking-tight">Documentation</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/10 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="close-up minimalist 3d avatar of a male developer with glasses and dark hair on a soft navy background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBv8qJq6w1FinAyj5VIdcWm6ejx3YxDzugAMMWHplJ1-vX8pfz0Dr2Gc3qanrbWT5VPI1M2uaLjfOht_wdVF7U3x8_5hJJfYzdGkm5nlrD19CalDa3Yz85G68t8xrmyyh-FSf3wWzqk2qwa4xYDTszoj7zeptJXdF4b-ZYRem9XHDjfNMtX9NATMUqWKb7fdu3GsV6k7t9C6Ypemk-wYcsXtTQEsM6-Jbs-i5fBnJXH4wvaSOK5e-TiqMbsHhJoYzwsH0o3cvaebll-"/>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-on-surface">Alex Chen</span>
+<span class="text-[10px] text-outline">Lead Architect</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-surface">
+<!-- TopAppBar Component -->
+<header class="w-full h-16 sticky top-0 z-40 bg-[#10141a]/70 backdrop-blur-xl flex justify-between items-center px-8 border-b border-[#414752]/20">
+<div class="flex items-center gap-4">
+<h2 class="text-sm font-medium tracking-wide uppercase font-['Inter'] text-[#a2c9ff]">Settings</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm" data-icon="search">search</span>
+<input class="bg-surface-container-lowest text-xs py-2 pl-9 pr-4 rounded-full border-none focus:ring-1 focus:ring-primary/40 w-64 transition-all duration-300" placeholder="Search parameters..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 text-[#9499a4] hover:text-[#dfe2eb] transition-opacity">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-[#9499a4] hover:text-[#dfe2eb] transition-opacity">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Canvas Container -->
+<div class="p-8 max-w-[1200px] w-full mx-auto space-y-10 custom-scrollbar overflow-y-auto">
+<!-- Page Tabs -->
+<div class="flex items-center gap-8 border-b border-outline-variant/10 pb-4">
+<button class="relative pb-4 text-sm font-bold tracking-tight text-primary transition-colors">
+                    General Settings
+                    <span class="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-full"></span>
+</button>
+<button class="pb-4 text-sm font-medium tracking-tight text-outline hover:text-on-surface transition-colors">
+                    Sync History
+                </button>
+</div>
+<!-- Bento Grid Settings Sections -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Section 1: GitHub Configuration -->
+<section class="col-span-12 lg:col-span-7 bg-surface-container-low rounded-xl p-8 transition-all hover:bg-surface-container relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-50"></div>
+<div class="flex justify-between items-start mb-8">
+<div>
+<h3 class="text-lg font-bold tracking-tight mb-1">GitHub Configuration</h3>
+<p class="text-xs text-outline">Manage authentication and repository scope</p>
+</div>
+<span class="material-symbols-outlined text-primary/40 text-3xl" data-icon="hub">hub</span>
+</div>
+<div class="space-y-6">
+<div class="space-y-2">
+<label class="block text-[10px] uppercase tracking-widest text-outline font-bold">GitHub Personal Access Token</label>
+<div class="flex gap-3">
+<input class="flex-1 bg-surface-container-highest border-none rounded-lg text-sm px-4 py-3 focus:ring-1 focus:ring-primary/40" type="password" value="ghp_************************"/>
+<button class="px-6 py-2 bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold text-xs rounded-lg transition-transform active:scale-95 shadow-lg shadow-primary/10">Save</button>
+</div>
+</div>
+<div class="space-y-3">
+<label class="block text-[10px] uppercase tracking-widest text-outline font-bold">Monitored Organizations</label>
+<div class="space-y-2">
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-md bg-[#24292f] flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-lg" data-icon="groups">groups</span>
+</div>
+<span class="text-sm font-medium">acme-corp-engineering</span>
+</div>
+<button class="text-error/60 hover:text-error transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-md bg-[#24292f] flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-lg" data-icon="groups">groups</span>
+</div>
+<span class="text-sm font-medium">runwatch-pro-dev</span>
+</div>
+<button class="text-error/60 hover:text-error transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+</button>
+</div>
+<button class="w-full py-3 border-2 border-dashed border-outline-variant/20 rounded-lg text-xs font-bold text-outline hover:border-primary/40 hover:text-primary transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                                    Add Organization
+                                </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Webhook Configuration -->
+<section class="col-span-12 lg:col-span-5 bg-surface-container-low rounded-xl p-8 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-8">
+<div>
+<h3 class="text-lg font-bold tracking-tight mb-1">Webhook Configuration</h3>
+<p class="text-xs text-outline">External system integration</p>
+</div>
+<span class="material-symbols-outlined text-secondary/40 text-3xl" data-icon="webhook">webhook</span>
+</div>
+<div class="space-y-6">
+<div class="space-y-2">
+<label class="block text-[10px] uppercase tracking-widest text-outline font-bold">Webhook URL</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-lowest border-none rounded-lg text-xs px-4 py-3 text-outline/80 cursor-default" readonly="" type="text" value="https://api.runwatch.com/v1/hook/x92j-8sl2"/>
+<button class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-surface-container-highest rounded transition-colors text-primary">
+<span class="material-symbols-outlined text-sm" data-icon="content_copy">content_copy</span>
+</button>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block text-[10px] uppercase tracking-widest text-outline font-bold">Webhook Secret</label>
+<input class="w-full bg-surface-container-highest border-none rounded-lg text-sm px-4 py-3 focus:ring-1 focus:ring-primary/40" type="password" value="super-secret-token-key-2024"/>
+</div>
+</div>
+</div>
+<div class="mt-8 p-4 bg-secondary-container/10 rounded-lg border border-secondary-container/20">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary text-sm mt-0.5" data-icon="verified_user">verified_user</span>
+<p class="text-[11px] text-on-secondary-container leading-relaxed">Webhooks are active. Last successful delivery: 4 minutes ago.</p>
+</div>
+</div>
+</section>
+<!-- Section 3: Alert Settings -->
+<section class="col-span-12 lg:col-span-6 bg-surface-container-low rounded-xl p-8 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-tertiary opacity-50"></div>
+<h3 class="text-lg font-bold tracking-tight mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary" data-icon="notifications_active">notifications_active</span>
+                        Alert Settings
+                    </h3>
+<div class="space-y-8">
+<div class="flex items-center justify-between">
+<div class="space-y-1">
+<p class="text-sm font-semibold">Queue Time Threshold</p>
+<p class="text-xs text-outline">Alert when workflow wait time exceeds limit</p>
+</div>
+<div class="flex items-center gap-2">
+<input class="w-16 bg-surface-container-highest border-none rounded text-center py-2 text-sm font-bold focus:ring-1 focus:ring-primary/40" type="number" value="15"/>
+<span class="text-[10px] font-bold text-outline uppercase tracking-tighter">Min</span>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="space-y-1">
+<p class="text-sm font-semibold">Browser Notifications</p>
+<p class="text-xs text-outline">Native desktop push alerts</p>
+</div>
+<button class="w-12 h-6 bg-secondary rounded-full relative transition-colors">
+<span class="absolute right-1 top-1 w-4 h-4 bg-on-secondary rounded-full"></span>
+</button>
+</div>
+<div class="flex items-center justify-between">
+<div class="space-y-1">
+<p class="text-sm font-semibold">Sound Alerts</p>
+<p class="text-xs text-outline">Play high-priority warning chime</p>
+</div>
+<button class="w-12 h-6 bg-surface-container-highest rounded-full relative transition-colors group">
+<span class="absolute left-1 top-1 w-4 h-4 bg-outline rounded-full transition-all group-hover:bg-outline-variant"></span>
+</button>
+</div>
+</div>
+</section>
+<!-- Section 4: Display Preferences -->
+<section class="col-span-12 lg:col-span-6 bg-surface-container-low rounded-xl p-8">
+<h3 class="text-lg font-bold tracking-tight mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container" data-icon="visibility">visibility</span>
+                        Display Preferences
+                    </h3>
+<div class="grid grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="block text-[10px] uppercase tracking-widest text-outline font-bold">Default Page Size</label>
+<select class="w-full bg-surface-container-highest border-none rounded-lg text-sm px-4 py-3 focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer">
+<option>25 rows</option>
+<option selected="">50 rows</option>
+<option>100 rows</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="block text-[10px] uppercase tracking-widest text-outline font-bold">Auto-Refresh Interval</label>
+<select class="w-full bg-surface-container-highest border-none rounded-lg text-sm px-4 py-3 focus:ring-1 focus:ring-primary/40 appearance-none cursor-pointer">
+<option>Off</option>
+<option>30 seconds</option>
+<option selected="">1 minute</option>
+<option>5 minutes</option>
+</select>
+</div>
+<div class="col-span-2 space-y-3">
+<label class="block text-[10px] uppercase tracking-widest text-outline font-bold">UI Theme</label>
+<div class="flex gap-4">
+<div class="flex-1 p-3 rounded-lg border-2 border-primary bg-surface-container-lowest flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="dark_mode">dark_mode</span>
+<span class="text-sm font-bold">Midnight Dark</span>
+</div>
+<div class="w-4 h-4 rounded-full border-4 border-primary bg-transparent"></div>
+</div>
+<div class="flex-1 p-3 rounded-lg border-2 border-outline-variant/10 bg-surface-container-lowest opacity-40 flex items-center justify-between cursor-not-allowed">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline" data-icon="light_mode">light_mode</span>
+<span class="text-sm font-bold">Classic Light</span>
+</div>
+<div class="w-4 h-4 rounded-full border border-outline-variant/30 bg-transparent"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Sync History Preview (Faded/Inactive Context) -->
+<section class="col-span-12 bg-surface-container-low rounded-xl p-8 border border-outline-variant/5 opacity-50 select-none grayscale">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-lg font-bold tracking-tight">Recent Sync History</h3>
+<span class="text-xs font-bold text-outline">View Full History →</span>
+</div>
+<div class="w-full overflow-hidden">
+<table class="w-full text-left">
+<thead class="text-[10px] uppercase tracking-widest text-outline border-b border-outline-variant/10">
+<tr>
+<th class="pb-3 font-bold">Timestamp</th>
+<th class="pb-3 font-bold">Repositories Synced</th>
+<th class="pb-3 font-bold text-right">Status</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<tr class="border-b border-outline-variant/5">
+<td class="py-4 font-medium">2024-05-24 14:30:12</td>
+<td class="py-4">12 Repositories (acme-corp)</td>
+<td class="py-4 text-right text-secondary font-bold">SUCCESS</td>
+</tr>
+<tr>
+<td class="py-4 font-medium">2024-05-24 13:30:05</td>
+<td class="py-4">12 Repositories (acme-corp)</td>
+<td class="py-4 text-right text-secondary font-bold">SUCCESS</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</div>
+<!-- System Footer -->
+<footer class="mt-auto px-8 py-4 border-t border-outline-variant/10 flex justify-between items-center text-[10px] text-outline uppercase font-bold tracking-widest">
+<div class="flex items-center gap-4">
+<span>RunWatch Pro v2.4.1</span>
+<span class="w-1 h-1 bg-outline rounded-full"></span>
+<span class="text-secondary flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-secondary rounded-full animate-pulse"></span>
+                    System Online
+                </span>
+</div>
+<div>
+                © 2024 RUNWATCH INC. ALL RIGHTS RESERVED.
+            </div>
+</footer>
+</main>
+</body></html>
