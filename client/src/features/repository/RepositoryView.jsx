@@ -1,29 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  IconButton,
-  Tooltip,
-  Card,
-  CardContent,
-  Link,
-  Button,
-  Stack,
-  CircularProgress,
-  Divider,
-} from '@mui/material';
-import {
-  ArrowBack as BackIcon,
-  GitHub as GitHubIcon,
-  Assessment as AssessmentIcon,
-  Schedule as ScheduleIcon,
-  TrendingUp as TrendingUpIcon,
-  BugReport as BugIcon,
-  AccessTime as TimeIcon,
-} from '@mui/icons-material';
 import { Line, Bar } from 'react-chartjs-2';
 import { formatDuration, formatDate } from '../../common/utils/statusHelpers';
 import apiService from '../../api/apiService';
@@ -41,7 +17,6 @@ const RepositoryView = () => {
   const calculateRepoStats = (runs) => {
     if (!runs.length) return null;
 
-    // Initialize stats for all workflows
     const workflowStats = {};
     let totalRuns = 0;
     let successfulRuns = 0;
@@ -49,7 +24,6 @@ const RepositoryView = () => {
     let totalDuration = 0;
     let durationCount = 0;
 
-    // First initialize stats for all workflows in repository
     const allWorkflows = runs[0]?.repository?.workflows || [];
     allWorkflows.forEach(workflow => {
       workflowStats[workflow.name] = {
@@ -64,11 +38,9 @@ const RepositoryView = () => {
       };
     });
 
-    // Then update stats for workflows that have runs
     runs.forEach(run => {
       const workflowName = run.workflow.name;
       if (!workflowStats[workflowName]) {
-        // This shouldn't happen normally but handle it just in case
         workflowStats[workflowName] = {
           total: 0,
           successful: 0,
@@ -80,35 +52,27 @@ const RepositoryView = () => {
         };
       }
 
-      const stats = workflowStats[workflowName];
-      stats.total++;
+      const s = workflowStats[workflowName];
+      s.total++;
       totalRuns++;
-      
-      if (run.run.conclusion === 'success') {
-        stats.successful++;
-        successfulRuns++;
-      }
-      if (run.run.conclusion === 'failure') {
-        stats.failed++;
-        failedRuns++;
-      }
-      
+
+      if (run.run.conclusion === 'success') { s.successful++; successfulRuns++; }
+      if (run.run.conclusion === 'failure') { s.failed++; failedRuns++; }
+
       const start = new Date(run.run.created_at);
       const end = new Date(run.run.updated_at);
       const duration = end - start;
       if (duration > 0) {
-        stats.durations.push(duration);
+        s.durations.push(duration);
         totalDuration += duration;
         durationCount++;
       }
 
-      // Update lastRun if this run is more recent
-      if (!stats.lastRun || new Date(run.run.created_at) > new Date(stats.lastRun)) {
-        stats.lastRun = run.run.created_at;
+      if (!s.lastRun || new Date(run.run.created_at) > new Date(s.lastRun)) {
+        s.lastRun = run.run.created_at;
       }
     });
 
-    // Calculate activity trends
     const last30Days = Array.from({ length: 30 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (29 - i));
@@ -119,9 +83,7 @@ const RepositoryView = () => {
       labels: last30Days.map(date => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
       datasets: [{
         label: 'Total Runs',
-        data: last30Days.map(date => 
-          runs.filter(run => run.run.created_at.startsWith(date)).length
-        ),
+        data: last30Days.map(date => runs.filter(run => run.run.created_at.startsWith(date)).length),
         borderColor: 'rgba(88, 166, 255, 1)',
         backgroundColor: 'rgba(88, 166, 255, 0.1)',
         tension: 0.4,
@@ -129,14 +91,13 @@ const RepositoryView = () => {
       }]
     };
 
-    // Workflow comparison data
     const workflowComparison = {
       labels: Object.keys(workflowStats),
       datasets: [
         {
           label: 'Success Rate (%)',
-          data: Object.values(workflowStats).map(stats => 
-            stats.total ? (stats.successful / stats.total * 100).toFixed(1) : 0
+          data: Object.values(workflowStats).map(s =>
+            s.total ? (s.successful / s.total * 100).toFixed(1) : 0
           ),
           backgroundColor: 'rgba(35, 197, 98, 0.6)',
           borderColor: 'rgba(35, 197, 98, 1)',
@@ -144,11 +105,11 @@ const RepositoryView = () => {
         },
         {
           label: 'Average Duration (minutes)',
-          data: Object.values(workflowStats).map(stats => {
-            const avgDuration = stats.durations.length
-              ? stats.durations.reduce((acc, curr) => acc + curr, 0) / stats.durations.length
+          data: Object.values(workflowStats).map(s => {
+            const avg = s.durations.length
+              ? s.durations.reduce((a, c) => a + c, 0) / s.durations.length
               : 0;
-            return (avgDuration / (1000 * 60)).toFixed(1);
+            return (avg / (1000 * 60)).toFixed(1);
           }),
           backgroundColor: 'rgba(88, 166, 255, 0.6)',
           borderColor: 'rgba(88, 166, 255, 1)',
@@ -172,14 +133,10 @@ const RepositoryView = () => {
   const fetchRepositoryData = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getRepoWorkflowRuns(
-        decodeURIComponent(repoName)
-      );
+      const response = await apiService.getRepoWorkflowRuns(decodeURIComponent(repoName));
       const repoWorkflows = response.data;
-      
       if (repoWorkflows.length > 0) {
-        const repoInfo = repoWorkflows[0].repository;
-        setRepository(repoInfo);
+        setRepository(repoWorkflows[0].repository);
         setStats(calculateRepoStats(repoWorkflows));
         setError(null);
       } else {
@@ -195,27 +152,20 @@ const RepositoryView = () => {
 
   useEffect(() => {
     fetchRepositoryData();
-
-    // Set up socket listeners for real-time updates
     const cleanupListeners = setupSocketListeners({
       onWorkflowUpdate: (updatedWorkflow) => {
         if (updatedWorkflow.repository.fullName === decodeURIComponent(repoName)) {
-          // Refresh the data to get the latest stats
           fetchRepositoryData();
         }
       }
     });
-
-    return () => {
-      cleanupListeners();
-    };
+    return () => { cleanupListeners(); };
   }, [repoName]);
 
   const handleSyncAll = async () => {
     try {
       setSyncing(true);
       await apiService.syncWorkflowRuns(decodeURIComponent(repoName));
-      // Refresh the data to get the latest stats
       await fetchRepositoryData();
       setError(null);
     } catch (err) {
@@ -227,7 +177,6 @@ const RepositoryView = () => {
   };
 
   const navigateToWorkflowHistory = (workflowName) => {
-    // First encode both parameters for the URL
     const encodedRepoName = encodeURIComponent(repoName);
     const encodedWorkflowName = encodeURIComponent(workflowName);
     navigate(`/workflow-history/${encodedRepoName}/${encodedWorkflowName}`);
@@ -235,313 +184,183 @@ const RepositoryView = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
     );
   }
 
   if (error || !repository) {
     return (
-      <Box sx={{ mt: 4, textAlign: 'center' }}>
-        <Typography color="error">{error}</Typography>
-        <Button 
-          variant="contained" 
-          sx={{ mt: 2 }} 
+      <div className="mt-8 text-center">
+        <p className="text-error">{error}</p>
+        <button
           onClick={() => navigate('/')}
-          startIcon={<BackIcon />}
+          className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-sm hover:bg-primary/20"
         >
+          <span className="material-symbols-outlined text-base">arrow_back</span>
           Back to Dashboard
-        </Button>
-      </Box>
+        </button>
+      </div>
     );
   }
 
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { intersect: false, mode: 'index' },
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(240,246,252,0.1)' }, ticks: { color: '#8B949E' } },
+      x: { grid: { color: 'rgba(240,246,252,0.1)' }, ticks: { color: '#8B949E', maxTicksLimit: 10 } }
+    }
+  };
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', labels: { color: '#8B949E', boxHeight: 8, padding: 8 } } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(240,246,252,0.1)' }, ticks: { color: '#8B949E' } },
+      x: { grid: { color: 'rgba(240,246,252,0.1)' }, ticks: { color: '#8B949E' } }
+    }
+  };
+
   return (
-    <Box sx={{ pb: 6 }}>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        mb: 3,
-        background: 'linear-gradient(90deg, rgba(88, 166, 255, 0.1) 0%, rgba(88, 166, 255, 0.05) 100%)',
-        p: 3,
-        borderRadius: '12px',
-        border: '1px solid rgba(88, 166, 255, 0.2)'
-      }}>
-        <Tooltip title="Back to Dashboard">
-          <IconButton onClick={() => navigate('/')} sx={{ mr: 2, color: '#E6EDF3' }}>
-            <BackIcon />
-          </IconButton>
-        </Tooltip>
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h4" component="h1" sx={{
-            fontWeight: 600,
-            fontSize: '1.75rem',
-            color: '#E6EDF3',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1
-          }}>
-            <GitHubIcon sx={{ fontSize: '1.75rem' }} />
+    <div className="pb-12">
+      {/* Header */}
+      <div className="flex items-center mb-6 bg-primary/10 p-6 rounded-xl border border-primary/20">
+        <button
+          onClick={() => navigate('/')}
+          title="Back to Dashboard"
+          className="mr-4 p-2 rounded-lg text-on-surface hover:bg-primary/10 transition-colors"
+        >
+          <span className="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div className="flex-1">
+          <h1 className="text-2xl font-semibold text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-2xl">hub</span>
             {repository.fullName}
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined"
-          startIcon={<ScheduleIcon />}
+          </h1>
+        </div>
+        <button
           onClick={handleSyncAll}
           disabled={syncing}
-          sx={{ 
-            mr: 1,
-            borderColor: 'rgba(88, 166, 255, 0.2)',
-            color: '#58A6FF',
-            '&:hover': {
-              borderColor: 'rgba(88, 166, 255, 0.5)',
-              bgcolor: 'rgba(88, 166, 255, 0.1)'
-            }
-          }}
+          className="mr-2 inline-flex items-center gap-2 px-4 py-2 border border-primary/20 text-primary rounded-xl text-sm hover:border-primary/50 hover:bg-primary/10 disabled:opacity-50 transition-colors"
         >
+          <span className="material-symbols-outlined text-base">schedule</span>
           {syncing ? 'Syncing...' : 'Sync All'}
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<GitHubIcon />}
+        </button>
+        <button
           onClick={() => window.open(repository.url, '_blank', 'noopener,noreferrer')}
-          sx={{ 
-            borderColor: 'rgba(88, 166, 255, 0.2)',
-            color: '#58A6FF',
-            '&:hover': {
-              borderColor: 'rgba(88, 166, 255, 0.5)',
-              bgcolor: 'rgba(88, 166, 255, 0.1)'
-            }
-          }}
+          className="inline-flex items-center gap-2 px-4 py-2 border border-primary/20 text-primary rounded-xl text-sm hover:border-primary/50 hover:bg-primary/10 transition-colors"
         >
+          <span className="material-symbols-outlined text-base">open_in_new</span>
           View Repository
-        </Button>
-      </Box>
+        </button>
+      </div>
 
-      <Grid container spacing={2}>
-        {/* Overview Stats */}
-        <Grid item xs={6} sm={3}>
-          <Card sx={{ bgcolor: '#161B22', border: '1px solid rgba(240, 246, 252, 0.1)' }}>
-            <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                <AssessmentIcon sx={{ color: '#58A6FF', mr: 1, fontSize: '1rem' }} />
-                <Typography sx={{ color: '#8B949E', fontSize: '0.875rem' }}>Total Runs</Typography>
-              </Box>
-              <Typography variant="h6" sx={{ color: '#E6EDF3', fontSize: '1.1rem' }}>
-                {stats.totalRuns}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-base text-primary">assessment</span>
+            <span className="text-on-surface-variant text-sm">Total Runs</span>
+          </div>
+          <p className="text-on-surface text-lg font-semibold">{stats.totalRuns}</p>
+        </div>
 
-        <Grid item xs={6} sm={3}>
-          <Card sx={{ bgcolor: '#161B22', border: '1px solid rgba(240, 246, 252, 0.1)' }}>
-            <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                <TrendingUpIcon sx={{ color: '#23C562', mr: 1, fontSize: '1rem' }} />
-                <Typography sx={{ color: '#8B949E', fontSize: '0.875rem' }}>Success Rate</Typography>
-              </Box>
-              <Typography variant="h6" sx={{ color: '#E6EDF3', fontSize: '1.1rem' }}>
-                {stats.successRate.toFixed(1)}%
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-base text-secondary">trending_up</span>
+            <span className="text-on-surface-variant text-sm">Success Rate</span>
+          </div>
+          <p className="text-on-surface text-lg font-semibold">{stats.successRate.toFixed(1)}%</p>
+        </div>
 
-        <Grid item xs={6} sm={3}>
-          <Card sx={{ bgcolor: '#161B22', border: '1px solid rgba(240, 246, 252, 0.1)' }}>
-            <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                <BugIcon sx={{ color: '#F85149', mr: 1, fontSize: '1rem' }} />
-                <Typography sx={{ color: '#8B949E', fontSize: '0.875rem' }}>Failed Runs</Typography>
-              </Box>
-              <Typography variant="h6" sx={{ color: '#E6EDF3', fontSize: '1.1rem' }}>
-                {stats.failedRuns}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-base text-error">bug_report</span>
+            <span className="text-on-surface-variant text-sm">Failed Runs</span>
+          </div>
+          <p className="text-on-surface text-lg font-semibold">{stats.failedRuns}</p>
+        </div>
 
-        <Grid item xs={6} sm={3}>
-          <Card sx={{ bgcolor: '#161B22', border: '1px solid rgba(240, 246, 252, 0.1)' }}>
-            <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                <TimeIcon sx={{ color: '#58A6FF', mr: 1, fontSize: '1rem' }} />
-                <Typography sx={{ color: '#8B949E', fontSize: '0.875rem' }}>Avg. Duration</Typography>
-              </Box>
-              <Typography variant="h6" sx={{ color: '#E6EDF3', fontSize: '1.1rem' }}>
-                {formatDuration(stats.avgDuration)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-base text-primary">access_time</span>
+            <span className="text-on-surface-variant text-sm">Avg. Duration</span>
+          </div>
+          <p className="text-on-surface text-lg font-semibold">{formatDuration(stats.avgDuration)}</p>
+        </div>
+      </div>
 
-        {/* Activity Trends Chart */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={{ 
-            p: 2,
-            height: '100%',
-            bgcolor: '#161B22',
-            borderRadius: '12px',
-            border: '1px solid rgba(240, 246, 252, 0.1)',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <Typography variant="h6" sx={{ color: '#E6EDF3', mb: 2, fontSize: '1rem' }}>
-              30-Day Activity Trends
-            </Typography>
-            <Box sx={{ flex: 1, minHeight: 250 }}>
-              <Line
-                data={stats.activityTrends}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  interaction: {
-                    intersect: false,
-                    mode: 'index'
-                  },
-                  plugins: {
-                    legend: {
-                      display: false
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      grid: { color: 'rgba(240, 246, 252, 0.1)' },
-                      ticks: { color: '#8B949E' }
-                    },
-                    x: {
-                      grid: { color: 'rgba(240, 246, 252, 0.1)' },
-                      ticks: { 
-                        color: '#8B949E',
-                        maxTicksLimit: 10
-                      }
-                    }
-                  }
-                }}
-              />
-            </Box>
-          </Paper>
-        </Grid>
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4 flex flex-col">
+          <h2 className="text-on-surface text-base font-medium mb-4">30-Day Activity Trends</h2>
+          <div className="flex-1 min-h-[250px]">
+            <Line data={stats.activityTrends} options={chartOptions} />
+          </div>
+        </div>
 
-        {/* Workflow Comparison */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={{ 
-            p: 2,
-            height: '100%',
-            bgcolor: '#161B22',
-            borderRadius: '12px',
-            border: '1px solid rgba(240, 246, 252, 0.1)',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <Typography variant="h6" sx={{ color: '#E6EDF3', mb: 2, fontSize: '1rem' }}>
-              Workflow Comparison
-            </Typography>
-            <Box sx={{ flex: 1, minHeight: 250 }}>
-              <Bar
-                data={stats.workflowComparison}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'top',
-                      labels: { color: '#8B949E', boxHeight: 8, padding: 8 }
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      grid: { color: 'rgba(240, 246, 252, 0.1)' },
-                      ticks: { color: '#8B949E' }
-                    },
-                    x: {
-                      grid: { color: 'rgba(240, 246, 252, 0.1)' },
-                      ticks: { color: '#8B949E' }
-                    }
-                  }
-                }}
-              />
-            </Box>
-          </Paper>
-        </Grid>
+        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4 flex flex-col">
+          <h2 className="text-on-surface text-base font-medium mb-4">Workflow Comparison</h2>
+          <div className="flex-1 min-h-[250px]">
+            <Bar data={stats.workflowComparison} options={barOptions} />
+          </div>
+        </div>
+      </div>
 
-        {/* Workflow Details */}
-        <Grid item xs={12}>
-          <Paper elevation={0} sx={{ 
-            p: 2,
-            bgcolor: '#161B22',
-            borderRadius: '12px',
-            border: '1px solid rgba(240, 246, 252, 0.1)'
-          }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" sx={{ color: '#E6EDF3', fontSize: '1rem' }}>
-                Workflows ({Object.keys(stats.workflowStats).length})
-              </Typography>
-            </Box>
-            <Stack spacing={2}>
-              {Object.entries(stats.workflowStats).map(([name, workflowStat]) => (
-                <Paper
-                  key={name}
-                  elevation={0}
-                  sx={{
-                    p: 2.5,
-                    bgcolor: 'rgba(13, 17, 23, 0.3)',
-                    border: '1px solid rgba(240, 246, 252, 0.1)',
-                    borderRadius: '8px',
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography 
-                        onClick={() => navigateToWorkflowHistory(name)}
-                        sx={{ 
-                          color: '#E6EDF3',
-                          fontWeight: 500,
-                          cursor: 'pointer',
-                          '&:hover': {
-                            color: '#58A6FF',
-                          }
-                        }}
-                      >
-                        {name}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: '#8B949E', mt: 0.5 }}>
-                        Last run: {formatDate(workflowStat.lastRun)}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 3 }}>
-                      <Box>
-                        <Typography variant="body2" sx={{ color: '#8B949E' }}>Success Rate</Typography>
-                        <Typography sx={{ color: '#23C562' }}>
-                          {workflowStat.total ? (workflowStat.successful / workflowStat.total * 100).toFixed(1) : 0}%
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="body2" sx={{ color: '#8B949E' }}>Total Runs</Typography>
-                        <Typography sx={{ color: '#E6EDF3' }}>
-                          {workflowStat.total}
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="body2" sx={{ color: '#8B949E' }}>Avg. Duration</Typography>
-                        <Typography sx={{ color: '#E6EDF3' }}>
-                          {formatDuration(workflowStat.durations.length ? workflowStat.durations.reduce((acc, curr) => acc + curr, 0) / workflowStat.durations.length : 0)}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Paper>
-              ))}
-            </Stack>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
+      {/* Workflow List */}
+      <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
+        <h2 className="text-on-surface text-base font-medium mb-4">
+          Workflows ({Object.keys(stats.workflowStats).length})
+        </h2>
+        <div className="space-y-3">
+          {Object.entries(stats.workflowStats).map(([name, workflowStat]) => (
+            <div
+              key={name}
+              className="bg-surface/30 border border-outline-variant rounded-xl p-4"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p
+                    onClick={() => navigateToWorkflowHistory(name)}
+                    className="text-on-surface font-medium cursor-pointer hover:text-primary transition-colors"
+                  >
+                    {name}
+                  </p>
+                  <p className="text-on-surface-variant text-sm mt-0.5">
+                    Last run: {formatDate(workflowStat.lastRun)}
+                  </p>
+                </div>
+                <div className="flex gap-6">
+                  <div>
+                    <p className="text-on-surface-variant text-xs">Success Rate</p>
+                    <p className="text-secondary font-medium">
+                      {workflowStat.total ? (workflowStat.successful / workflowStat.total * 100).toFixed(1) : 0}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-on-surface-variant text-xs">Total Runs</p>
+                    <p className="text-on-surface font-medium">{workflowStat.total}</p>
+                  </div>
+                  <div>
+                    <p className="text-on-surface-variant text-xs">Avg. Duration</p>
+                    <p className="text-on-surface font-medium">
+                      {formatDuration(workflowStat.durations.length
+                        ? workflowStat.durations.reduce((a, c) => a + c, 0) / workflowStat.durations.length
+                        : 0)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };
 

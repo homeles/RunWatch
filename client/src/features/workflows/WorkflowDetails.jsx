@@ -1,25 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  CircularProgress,
-  Divider,
-  Grid,
-  IconButton,
-  Tooltip,
-  Stack,
-  Collapse,
-  Link
-} from '@mui/material';
-import {
-  ArrowBack as BackIcon,
-  ExpandMore as ExpandMoreIcon,
-  Schedule as ScheduleIcon,
-  History as HistoryIcon,
-} from '@mui/icons-material';
 import apiService from '../../api/apiService';
 import { setupSocketListeners } from '../../api/socketService';
 import StatusChip from '../../common/components/StatusChip';
@@ -50,13 +30,11 @@ const WorkflowDetails = () => {
 
     fetchWorkflowDetails();
 
-    // Set up socket listeners for real-time updates
     const cleanupListeners = setupSocketListeners({
       onWorkflowUpdate: (updatedWorkflow) => {
         if (updatedWorkflow.run.id.toString() === id.toString()) {
           setWorkflow(prevWorkflow => {
             if (!prevWorkflow) return updatedWorkflow;
-            // Only update if the new data is more recent
             return new Date(updatedWorkflow.run.updated_at) > new Date(prevWorkflow.run.updated_at)
               ? updatedWorkflow
               : prevWorkflow;
@@ -67,7 +45,6 @@ const WorkflowDetails = () => {
         if (workflowWithJobs.run.id.toString() === id.toString()) {
           setWorkflow(prevWorkflow => {
             if (!prevWorkflow) return workflowWithJobs;
-            // Keep existing workflow data but update jobs
             return {
               ...prevWorkflow,
               jobs: workflowWithJobs.jobs,
@@ -89,329 +66,189 @@ const WorkflowDetails = () => {
   const toggleJobSteps = (jobId) => {
     setExpandedJobs(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(jobId)) {
-        newSet.delete(jobId);
-      } else {
-        newSet.add(jobId);
-      }
+      if (newSet.has(jobId)) { newSet.delete(jobId); } else { newSet.add(jobId); }
       return newSet;
     });
   };
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
     );
   }
 
   if (error || !workflow) {
     return (
-      <Box sx={{ mt: 4, textAlign: 'center' }}>
-        <Typography color="error">{error || 'Workflow not found'}</Typography>
-        <Button 
-          variant="contained" 
-          sx={{ mt: 2 }} 
-          onClick={() => navigate(-1)} // Change this to use browser history back
-          startIcon={<BackIcon />}
+      <div className="mt-8 text-center">
+        <p className="text-error">{error || 'Workflow not found'}</p>
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-sm hover:bg-primary/20"
         >
+          <span className="material-symbols-outlined text-base">arrow_back</span>
           Back
-        </Button>
-      </Box>
+        </button>
+      </div>
     );
   }
 
-  // Format GitHub URL to ensure it starts with https://
-  const formatGitHubUrl = (url) => {
-    if (!url) return '#';
-    if (url.startsWith('http')) return url;
-    return `https://github.com${url.startsWith('/') ? '' : '/'}${url}`;
-  };
-
   const handleOpenLink = (url) => {
-    if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <Box sx={{ pb: 6 }}>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        mb: 4,
-        background: 'linear-gradient(90deg, rgba(88, 166, 255, 0.1) 0%, rgba(88, 166, 255, 0.05) 100%)',
-        p: 3,
-        borderRadius: '12px',
-        border: '1px solid rgba(88, 166, 255, 0.2)'
-      }}>
-        <Tooltip title="Back to Workflow History">
-          <IconButton onClick={() => navigate(-1)} sx={{ mr: 2, color: '#E6EDF3' }}>
-            <BackIcon />
-          </IconButton>
-        </Tooltip>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{
-            fontWeight: 600,
-            fontSize: '1.75rem',
-            color: '#E6EDF3'
-          }}>
-            {workflow.workflow.name}
-          </Typography>
-          <Typography variant="subtitle1" sx={{ color: '#8B949E' }}>
+    <div className="pb-12">
+      {/* Header */}
+      <div className="flex items-center mb-8 bg-primary/10 p-6 rounded-xl border border-primary/20">
+        <button
+          onClick={() => navigate(-1)}
+          title="Back to Workflow History"
+          className="mr-4 p-2 rounded-lg text-on-surface hover:bg-primary/10 transition-colors"
+        >
+          <span className="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div>
+          <h1 className="text-2xl font-semibold text-on-surface">{workflow.workflow.name}</h1>
+          <p className="text-on-surface-variant text-sm mt-0.5">
             {workflow.repository.fullName} • Run #{workflow.run.number}
-          </Typography>
-        </Box>
-      </Box>
+          </p>
+        </div>
+      </div>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Paper elevation={0} sx={{ 
-            p: 3, 
-            mb: 3,
-            bgcolor: '#161B22',
-            borderRadius: '12px',
-            border: '1px solid rgba(240, 246, 252, 0.1)'
-          }}>
-            <Grid container spacing={3} alignItems="center">
-              <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="body2" sx={{ color: '#8B949E', mb: 1 }}>Status</Typography>
-                <StatusChip 
-                  status={workflow.run.status} 
-                  conclusion={workflow.run.conclusion}
-                />
-              </Grid>
-              
-              <Grid item xs={12} sm={6} md={3}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <ScheduleIcon sx={{ fontSize: '1.2rem', mr: 1, color: '#8B949E' }} />
-                  <Box>
-                    <Typography variant="body2" sx={{ color: '#8B949E' }}>Duration</Typography>
-                    <Typography variant="body1" sx={{ color: '#E6EDF3' }}>
-                      {formatDuration(workflow.run.created_at, workflow.run.updated_at)}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={12} sm={6} md={3}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <HistoryIcon sx={{ fontSize: '1.2rem', mr: 1, color: '#8B949E' }} />
-                  <Box>
-                    <Typography variant="body2" sx={{ color: '#8B949E' }}>Last Updated</Typography>
-                    <Typography variant="body1" sx={{ color: '#E6EDF3' }}>
-                      {formatDate(workflow.run.updated_at)}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-            </Grid>
+      {/* Run Info Card */}
+      <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+          <div>
+            <p className="text-on-surface-variant text-sm mb-2">Status</p>
+            <StatusChip status={workflow.run.status} conclusion={workflow.run.conclusion} />
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-on-surface-variant">schedule</span>
+            <div>
+              <p className="text-on-surface-variant text-sm">Duration</p>
+              <p className="text-on-surface">{formatDuration(workflow.run.created_at, workflow.run.updated_at)}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-on-surface-variant">history</span>
+            <div>
+              <p className="text-on-surface-variant text-sm">Last Updated</p>
+              <p className="text-on-surface">{formatDate(workflow.run.updated_at)}</p>
+            </div>
+          </div>
+        </div>
 
-            <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-              <Link
-                href={workflow.run.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ textDecoration: 'none' }}
+        <div className="flex gap-3">
+          <a
+            href={workflow.run.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-primary/20 text-primary rounded-xl text-sm hover:border-primary/50 hover:bg-primary/10 transition-colors"
+          >
+            <span className="material-symbols-outlined text-base">open_in_new</span>
+            View on GitHub
+          </a>
+          <a
+            href={workflow.repository.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-outline-variant text-on-surface-variant rounded-xl text-sm hover:border-outline hover:bg-surface-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-base">hub</span>
+            Repository
+          </a>
+        </div>
+      </div>
+
+      {/* Jobs */}
+      <h2 className="text-on-surface text-lg font-semibold mb-4">Jobs</h2>
+
+      {!workflow.jobs || workflow.jobs.length === 0 ? (
+        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6">
+          <p className="text-on-surface-variant">No job information available</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {workflow.jobs.map((job) => (
+            <div
+              key={job.id}
+              className="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden"
+            >
+              {/* Job Header */}
+              <div
+                onClick={() => toggleJobSteps(job.id)}
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-primary/5 transition-colors"
               >
-                <Button 
-                  variant="outlined"
-                  sx={{ 
-                    borderColor: 'rgba(88, 166, 255, 0.2)',
-                    color: '#58A6FF',
-                    '&:hover': {
-                      borderColor: 'rgba(88, 166, 255, 0.5)',
-                      bgcolor: 'rgba(88, 166, 255, 0.1)'
-                    }
-                  }}
-                >
-                  View on GitHub
-                </Button>
-              </Link>
-              <Link
-                href={workflow.repository.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ textDecoration: 'none' }}
-              >
-                <Button 
-                  variant="outlined"
-                  sx={{ 
-                    borderColor: 'rgba(139, 148, 158, 0.2)',
-                    color: '#8B949E',
-                    '&:hover': {
-                      borderColor: 'rgba(139, 148, 158, 0.5)',
-                      bgcolor: 'rgba(139, 148, 158, 0.1)'
-                    }
-                  }}
-                >
-                  Repository
-                </Button>
-              </Link>
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12}>
-          <Typography variant="h5" sx={{ 
-            mb: 2, 
-            color: '#E6EDF3',
-            fontWeight: 600
-          }}>
-            Jobs
-          </Typography>
-          
-          {!workflow.jobs || workflow.jobs.length === 0 ? (
-            <Paper elevation={0} sx={{
-              p: 3,
-              bgcolor: '#161B22',
-              borderRadius: '12px',
-              border: '1px solid rgba(240, 246, 252, 0.1)'
-            }}>
-              <Typography sx={{ color: '#8B949E' }}>No job information available</Typography>
-            </Paper>
-          ) : (
-            <Stack spacing={2}>
-              {workflow.jobs.map((job) => (
-                <Paper 
-                  key={job.id} 
-                  elevation={0}
-                  sx={{
-                    bgcolor: '#161B22',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(240, 246, 252, 0.1)',
-                    overflow: 'hidden'
-                  }}
-                >
-                  <Box 
-                    onClick={() => toggleJobSteps(job.id)}
-                    sx={{
-                      p: 2.5,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: 'rgba(88, 166, 255, 0.05)' }
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <StatusChip 
-                        status={job.status} 
-                        conclusion={job.conclusion}
-                      />
-                      <Typography sx={{ color: '#E6EDF3', fontWeight: 500 }}>
-                        {job.name}
-                      </Typography>
-                      {job.runner_name && (
-                        <Stack direction="row" spacing={0.5} sx={{ 
-                          color: '#8B949E',
-                          display: 'flex',
-                          alignItems: 'center',
-                          bgcolor: 'rgba(88, 166, 255, 0.1)',
-                          px: 1,
-                          py: 0.5,
-                          borderRadius: '4px',
-                          border: '1px solid rgba(88, 166, 255, 0.2)',
-                          fontSize: '0.875rem'
-                        }}>
-                          <Typography component="span" sx={{ opacity: 0.7, fontSize: 'inherit' }}>Runner:</Typography>
-                          {job.runner_os ? (
-                            <>
-                              <Typography component="span" sx={{ fontSize: 'inherit' }}>
-                                {job.runner_os} {job.runner_image_version}
-                              </Typography>
-                              {job.runner_version && (
-                                <Typography component="span" sx={{ fontSize: 'inherit', opacity: 0.7 }}>
-                                  ({job.runner_version})
-                                </Typography>
-                              )}
-                            </>
-                          ) : (
-                            <Typography component="span" sx={{ fontSize: 'inherit' }}>
-                              {job.runner_name}
-                              {job.runner_group_name && ` (${job.runner_group_name})`}
-                            </Typography>
-                          )}
-                        </Stack>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <StatusChip status={job.status} conclusion={job.conclusion} />
+                  <span className="text-on-surface font-medium">{job.name}</span>
+                  {job.runner_name && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 border border-primary/20 rounded text-xs text-on-surface-variant">
+                      <span className="opacity-70">Runner:</span>
+                      {job.runner_os ? (
+                        <>
+                          {job.runner_os} {job.runner_image_version}
+                          {job.runner_version && <span className="opacity-70"> ({job.runner_version})</span>}
+                        </>
+                      ) : (
+                        <>{job.runner_name}{job.runner_group_name && ` (${job.runner_group_name})`}</>
                       )}
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Typography variant="body2" sx={{ color: '#8B949E' }}>
-                        {formatDuration(job.started_at, job.completed_at)}
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevent collapse toggle
-                          // Construct job-specific GitHub URL by appending /job/{jobId} to the run URL
-                          const baseUrl = workflow.run.url; // URL is already in https://github.com/... format
-                          const jobUrl = `${baseUrl}/job/${job.id}`;
-                          window.open(jobUrl, '_blank', 'noopener,noreferrer');
-                        }}
-                        sx={{ 
-                          borderColor: 'rgba(88, 166, 255, 0.2)',
-                          color: '#58A6FF',
-                          '&:hover': {
-                            borderColor: 'rgba(88, 166, 255, 0.5)',
-                            bgcolor: 'rgba(88, 166, 255, 0.1)'
-                          }
-                        }}
-                      >
-                        View on GitHub
-                      </Button>
-                      <ExpandMoreIcon sx={{ 
-                        color: '#8B949E',
-                        transform: expandedJobs.has(job.id) ? 'rotate(180deg)' : 'none',
-                        transition: 'transform 0.2s'
-                      }} />
-                    </Box>
-                  </Box>
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-on-surface-variant text-sm">
+                    {formatDuration(job.started_at, job.completed_at)}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const jobUrl = `${workflow.run.url}/job/${job.id}`;
+                      window.open(jobUrl, '_blank', 'noopener,noreferrer');
+                    }}
+                    className="px-3 py-1 border border-primary/20 text-primary rounded-lg text-xs hover:border-primary/50 hover:bg-primary/10 transition-colors"
+                  >
+                    View on GitHub
+                  </button>
+                  <span
+                    className={`material-symbols-outlined text-on-surface-variant transition-transform duration-200 ${expandedJobs.has(job.id) ? 'rotate-180' : ''}`}
+                  >
+                    expand_more
+                  </span>
+                </div>
+              </div>
 
-                  <Collapse in={expandedJobs.has(job.id)}>
-                    <Divider sx={{ borderColor: 'rgba(240, 246, 252, 0.1)' }} />
-                    <Box sx={{ p: 2.5, bgcolor: 'rgba(13, 17, 23, 0.5)' }}>
-                      <Stack spacing={1.5}>
-                        {job.steps?.map((step) => (
-                          <Box
-                            key={step.number}
-                            sx={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              p: 1.5,
-                              borderRadius: 1,
-                              bgcolor: '#0D1117',
-                              border: '1px solid rgba(240, 246, 252, 0.05)'
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                              <StatusChip 
-                                status={step.status} 
-                                conclusion={step.conclusion}
-                              />
-                              <Typography sx={{ color: '#E6EDF3' }}>
-                                {step.name}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                              <Typography variant="body2" sx={{ color: '#8B949E' }}>
-                                {formatDuration(step.started_at, step.completed_at)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        ))}
-                      </Stack>
-                    </Box>
-                  </Collapse>
-                </Paper>
-              ))}
-            </Stack>
-          )}
-        </Grid>
-      </Grid>
-    </Box>
+              {/* Job Steps */}
+              {expandedJobs.has(job.id) && (
+                <>
+                  <hr className="border-outline-variant" />
+                  <div className="p-4 bg-surface/50">
+                    <div className="space-y-2">
+                      {job.steps?.map((step) => (
+                        <div
+                          key={step.number}
+                          className="flex items-center justify-between p-3 bg-surface rounded-xl border border-outline-variant/50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <StatusChip status={step.status} conclusion={step.conclusion} />
+                            <span className="text-on-surface text-sm">{step.name}</span>
+                          </div>
+                          <span className="text-on-surface-variant text-sm">
+                            {formatDuration(step.started_at, step.completed_at)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 

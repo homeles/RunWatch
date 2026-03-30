@@ -1,29 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Box,
-  Button,
-  Typography,
-  Paper,
-  Alert,
-  CircularProgress,
-  List,
-  ListItem,
-  FormHelperText,
-  ListItemText,
-  ListItemButton,
-  Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Stack,
-  LinearProgress,
-  Chip,
-  Card,
-  CardContent,
-  Grid2
-} from '@mui/material';
-import { Sync as SyncIcon, Save as SaveIcon, Restore as RestoreIcon } from '@mui/icons-material';
 import apiService from '../../api/apiService';
 import { socket } from '../../api/socketService';
 import { formatDistanceToNow } from 'date-fns';
@@ -52,8 +27,8 @@ const Settings = () => {
   const { token: adminToken, setToken: setAdminToken } = useAdminToken();
   const [showTokenDialog, setShowTokenDialog] = useState(false);
   const [tokenError, setTokenError] = useState('');
-  const [pendingAction, setPendingAction] = useState(null); // 'backup' or { type: 'restore', event }
-  
+  const [pendingAction, setPendingAction] = useState(null);
+
   const fetchActiveSync = async () => {
     try {
       const response = await apiService.getActiveSync();
@@ -72,7 +47,7 @@ const Settings = () => {
           setSyncDetails({
             currentRepoIndex: sync.results.progress.repoIndex + 1,
             totalRepos: sync.results.progress.totalRepos,
-            currentWorkflowIndex: sync.results.progress.workflowIndex !== null ? 
+            currentWorkflowIndex: sync.results.progress.workflowIndex !== null ?
               sync.results.progress.workflowIndex + 1 : undefined,
             totalWorkflows: sync.results.progress.totalWorkflows
           });
@@ -94,8 +69,7 @@ const Settings = () => {
     fetchSyncHistory();
     fetchActiveSync();
     fetchDatabaseStatus();
-    
-    // Set up socket listeners
+
     socket.on('connect', () => {
       console.log('Socket connected, fetching active sync...');
       fetchActiveSync();
@@ -104,34 +78,19 @@ const Settings = () => {
     socket.on('syncProgress', (data) => {
       setSyncing(true);
       setProgress(data.progress);
-      if (data.rateLimits) {
-        setRateLimits(data.rateLimits);
-      }
+      if (data.rateLimits) { setRateLimits(data.rateLimits); }
       if (data.currentRepo && data.currentWorkflow) {
-        setCurrentOperation({
-          repo: data.currentRepo,
-          workflow: data.currentWorkflow
-        });
+        setCurrentOperation({ repo: data.currentRepo, workflow: data.currentWorkflow });
       }
-      if (data.details) {
-        setSyncDetails(data.details);
-      }
-      if (data.completed) {
-        setSyncing(false);
-        setActiveSync(null);
-      }
+      if (data.details) { setSyncDetails(data.details); }
+      if (data.completed) { setSyncing(false); setActiveSync(null); }
     });
 
-    socket.on('rateLimitUpdate', (data) => {
-      setRateLimits(data);
-    });
+    socket.on('rateLimitUpdate', (data) => { setRateLimits(data); });
 
     socket.on('syncStatus', (data) => {
-      if (data.status === 'paused') {
-        setError(data.message);
-      } else if (data.status === 'resumed') {
-        setError(null);
-      }
+      if (data.status === 'paused') { setError(data.message); }
+      else if (data.status === 'resumed') { setError(null); }
     });
 
     return () => {
@@ -178,17 +137,15 @@ const Settings = () => {
       setError('Please select an organization to sync');
       return;
     }
-
     try {
       setSyncing(true);
       setError(null);
       setResults(null);
       setProgress(0);
       setCurrentOperation(null);
-      
       const response = await apiService.syncGitHubData(selectedInstallation, { maxWorkflowRuns });
       setResults(response.results);
-      await fetchSyncHistory(); // Refresh history after sync
+      await fetchSyncHistory();
     } catch (err) {
       setError(err.message || 'Failed to sync GitHub data');
     } finally {
@@ -198,9 +155,7 @@ const Settings = () => {
     }
   };
 
-  const handleSyncClick = (sync) => {
-    setSelectedSync(sync);
-  };
+  const handleSyncClick = (sync) => { setSelectedSync(sync); };
 
   const requireToken = useCallback((action) => {
     if (adminToken) return true;
@@ -214,14 +169,10 @@ const Settings = () => {
     setAdminToken(newToken);
     setShowTokenDialog(false);
     setTokenError('');
-    // Execute pending action after token is set
     const action = pendingAction;
     setPendingAction(null);
-    if (action === 'backup') {
-      executeBackup(newToken);
-    } else if (action?.type === 'restore') {
-      executeRestore(action.event, newToken);
-    }
+    if (action === 'backup') { executeBackup(newToken); }
+    else if (action?.type === 'restore') { executeRestore(action.event, newToken); }
   }, [pendingAction, setAdminToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getAuthErrorMessage = (err) => {
@@ -245,12 +196,11 @@ const Settings = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
       setRestoreMessage('Database backup created successfully');
       setRestoreMessageType('success');
     } catch (err) {
       if (err?.response?.status === 401) {
-        setAdminToken(''); // Clear invalid token
+        setAdminToken('');
         setTokenError(getAuthErrorMessage(err));
         setPendingAction('backup');
         setShowTokenDialog(true);
@@ -272,31 +222,26 @@ const Settings = () => {
     try {
       const file = event.target?.files?.[0];
       if (!file) return;
-
       setRestoreMessage('Restoring database...');
       setRestoreMessageType('info');
-
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
           const backupData = JSON.parse(e.target.result);
           const response = await apiService.restoreDatabaseBackup(backupData, tkn);
-          
-          // Refresh database status after restore
           await fetchDatabaseStatus();
-          
           setRestoreMessage(
             `Database restored successfully:\n` +
             `• ${response.data.stats.collectionsProcessed} collections processed\n` +
             `• ${response.data.stats.documentsRestored.toLocaleString()} documents restored\n` +
-            (response.data.stats.errors.length > 0 ? 
+            (response.data.stats.errors.length > 0 ?
               `• ${response.data.stats.errors.length} errors occurred during restore` : '')
           );
           setRestoreMessageType(response.data.stats.errors.length > 0 ? 'warning' : 'success');
           setError(null);
         } catch (err) {
           if (err?.response?.status === 401) {
-            setAdminToken(''); // Clear invalid token
+            setAdminToken('');
             setTokenError(getAuthErrorMessage(err));
             setPendingAction({ type: 'restore', event });
             setShowTokenDialog(true);
@@ -320,437 +265,321 @@ const Settings = () => {
     executeRestore(event);
   };
 
+  const syncStatusColors = {
+    completed: 'bg-secondary/15 text-secondary border-secondary/20',
+    failed: 'bg-error/15 text-error border-error/20',
+    interrupted: 'bg-error/15 text-error border-error/20',
+    in_progress: 'bg-primary/15 text-primary border-primary/20',
+    paused: 'bg-[rgba(245,159,0,0.15)] text-[#F5A623] border-[rgba(245,159,0,0.2)]',
+  };
+
+  const alertColors = {
+    success: 'bg-secondary/10 border-secondary/30 text-secondary',
+    error: 'bg-error/10 border-error/30 text-error',
+    warning: 'bg-[rgba(245,159,0,0.1)] border-[rgba(245,159,0,0.3)] text-[#F5A623]',
+    info: 'bg-primary/10 border-primary/30 text-primary',
+  };
+
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
     );
   }
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', py: 4 }}>
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Database Health
-        </Typography>
+    <div className="max-w-3xl mx-auto py-8 space-y-6">
+
+      {/* Database Health */}
+      <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6">
+        <h2 className="text-on-surface text-lg font-semibold mb-4">Database Health</h2>
         {dbStatus ? (
           <>
-            <Grid2 container spacing={2}>
-              <Grid2 item xs={12} sm={6} md={3}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography color="text.secondary" gutterBottom variant="body2">
-                      Status
-                    </Typography>
-                    <Chip 
-                      label={dbStatus.ok ? "Healthy" : "Unhealthy"}
-                      color={dbStatus.ok ? "success" : "error"}
-                      size="small"
-                    />
-                  </CardContent>
-                </Card>
-              </Grid2>
-              <Grid2 item xs={12} sm={6} md={3}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography color="text.secondary" gutterBottom variant="body2">
-                      Total Workflows
-                    </Typography>
-                    <Typography variant="h6">
-                      {dbStatus.totalWorkflows?.toLocaleString() || 'N/A'}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid2>
-              <Grid2 item xs={12} sm={6} md={3}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography color="text.secondary" gutterBottom variant="body2">
-                      Storage Size
-                    </Typography>
-                    <Typography variant="h6">
-                      {`${(dbStatus.storageSize / (1024 * 1024)).toFixed(1)} MB`}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid2>
-              <Grid2 item xs={12} sm={6} md={3}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography color="text.secondary" gutterBottom variant="body2">
-                      Data Size
-                    </Typography>
-                    <Typography variant="h6">
-                      {`${(dbStatus.dataSize / (1024 * 1024)).toFixed(1)} MB`}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid2>
-              <Grid2 item xs={12} sm={6} md={3}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography color="text.secondary" gutterBottom variant="body2">
-                      Collections
-                    </Typography>
-                    <Typography variant="h6">
-                      {dbStatus.collections || 'N/A'}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid2>
-              <Grid2 item xs={12} sm={6} md={3}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography color="text.secondary" gutterBottom variant="body2">
-                      Indexes
-                    </Typography>
-                    <Typography variant="h6">
-                      {dbStatus.indexes || 'N/A'}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid2>
-              <Grid2 item xs={12} sm={6} md={3}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography color="text.secondary" gutterBottom variant="body2">
-                      Avg Object Size
-                    </Typography>
-                    <Typography variant="h6">
-                      {`${(dbStatus.avgObjSize / 1024).toFixed(1)} KB`}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid2>
-              <Grid2 item xs={12} sm={6} md={3}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography color="text.secondary" gutterBottom variant="body2">
-                      Last Update
-                    </Typography>
-                    <Typography variant="body2">
-                      {dbStatus.lastUpdated?.run?.run?.updated_at ? 
-                        formatDistanceToNow(new Date(dbStatus.lastUpdated.run.run.updated_at), { addSuffix: true }) : 'N/A'}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid2>
-            </Grid2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-surface-container border border-outline-variant rounded-xl p-3">
+                <p className="text-on-surface-variant text-xs mb-1">Status</p>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${dbStatus.ok ? 'bg-secondary/15 text-secondary border-secondary/20' : 'bg-error/15 text-error border-error/20'}`}>
+                  {dbStatus.ok ? 'Healthy' : 'Unhealthy'}
+                </span>
+              </div>
+              <div className="bg-surface-container border border-outline-variant rounded-xl p-3">
+                <p className="text-on-surface-variant text-xs mb-1">Total Workflows</p>
+                <p className="text-on-surface font-semibold">{dbStatus.totalWorkflows?.toLocaleString() || 'N/A'}</p>
+              </div>
+              <div className="bg-surface-container border border-outline-variant rounded-xl p-3">
+                <p className="text-on-surface-variant text-xs mb-1">Storage Size</p>
+                <p className="text-on-surface font-semibold">{`${(dbStatus.storageSize / (1024 * 1024)).toFixed(1)} MB`}</p>
+              </div>
+              <div className="bg-surface-container border border-outline-variant rounded-xl p-3">
+                <p className="text-on-surface-variant text-xs mb-1">Data Size</p>
+                <p className="text-on-surface font-semibold">{`${(dbStatus.dataSize / (1024 * 1024)).toFixed(1)} MB`}</p>
+              </div>
+              <div className="bg-surface-container border border-outline-variant rounded-xl p-3">
+                <p className="text-on-surface-variant text-xs mb-1">Collections</p>
+                <p className="text-on-surface font-semibold">{dbStatus.collections || 'N/A'}</p>
+              </div>
+              <div className="bg-surface-container border border-outline-variant rounded-xl p-3">
+                <p className="text-on-surface-variant text-xs mb-1">Indexes</p>
+                <p className="text-on-surface font-semibold">{dbStatus.indexes || 'N/A'}</p>
+              </div>
+              <div className="bg-surface-container border border-outline-variant rounded-xl p-3">
+                <p className="text-on-surface-variant text-xs mb-1">Avg Object Size</p>
+                <p className="text-on-surface font-semibold">{`${(dbStatus.avgObjSize / 1024).toFixed(1)} KB`}</p>
+              </div>
+              <div className="bg-surface-container border border-outline-variant rounded-xl p-3">
+                <p className="text-on-surface-variant text-xs mb-1">Last Update</p>
+                <p className="text-on-surface text-sm">
+                  {dbStatus.lastUpdated?.run?.run?.updated_at
+                    ? formatDistanceToNow(new Date(dbStatus.lastUpdated.run.run.updated_at), { addSuffix: true })
+                    : 'N/A'}
+                </p>
+              </div>
+            </div>
 
             {restoreMessage && (
-              <Alert 
-                severity={restoreMessageType} 
-                sx={{ 
-                  mt: 2,
-                  whiteSpace: 'pre-line'  // Allow newlines in the message
-                }}
-                onClose={() => setRestoreMessage(null)}
-              >
-                {restoreMessage}
-              </Alert>
+              <div className={`mt-4 p-3 rounded-xl border text-sm whitespace-pre-line flex items-start gap-2 ${alertColors[restoreMessageType] || alertColors.info}`}>
+                <span className="material-symbols-outlined text-base mt-0.5">
+                  {restoreMessageType === 'success' ? 'check_circle' : restoreMessageType === 'error' ? 'error' : 'info'}
+                </span>
+                <span className="flex-1">{restoreMessage}</span>
+                <button onClick={() => setRestoreMessage(null)} className="opacity-60 hover:opacity-100">
+                  <span className="material-symbols-outlined text-base">close</span>
+                </button>
+              </div>
             )}
 
-            <Box sx={{ mt: 4, display: 'flex', gap: 2, alignItems: 'center' }}>
-              <Button
-                variant="contained"
+            <div className="mt-6 flex gap-3">
+              <button
                 onClick={handleCreateBackup}
-                startIcon={<SaveIcon />}
-                sx={{
-                  bgcolor: 'rgba(88, 166, 255, 0.1)',
-                  color: '#58A6FF',
-                  '&:hover': {
-                    bgcolor: 'rgba(88, 166, 255, 0.2)',
-                  }
-                }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-sm hover:bg-primary/20 transition-colors"
               >
+                <span className="material-symbols-outlined text-base">save</span>
                 Create Backup
-              </Button>
-
-              <Button
-                component="label"
-                variant="contained"
-                startIcon={<RestoreIcon />}
-                sx={{
-                  bgcolor: 'rgba(88, 166, 255, 0.1)',
-                  color: '#58A6FF',
-                  '&:hover': {
-                    bgcolor: 'rgba(88, 166, 255, 0.2)',
-                  }
-                }}
-              >
+              </button>
+              <label className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-sm hover:bg-primary/20 transition-colors cursor-pointer">
+                <span className="material-symbols-outlined text-base">restore</span>
                 Restore Backup
-                <input
-                  type="file"
-                  hidden
-                  accept=".json"
-                  onChange={handleRestoreBackup}
-                />
-              </Button>
-            </Box>
+                <input type="file" className="hidden" accept=".json" onChange={handleRestoreBackup} />
+              </label>
+            </div>
           </>
         ) : (
-          <Typography color="text.secondary">
-            Loading database status...
-          </Typography>
+          <p className="text-on-surface-variant">Loading database status...</p>
         )}
-      </Paper>
+      </div>
 
+      {/* GitHub API Rate Limits */}
       {rateLimits && (
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            GitHub API Rate Limits
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Typography variant="body1">
+        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6">
+          <h2 className="text-on-surface text-lg font-semibold mb-4">GitHub API Rate Limits</h2>
+          <div className="flex items-center gap-4">
+            <span className="text-on-surface text-sm">
               Remaining: {rateLimits.remaining}/{rateLimits.limit}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
+            </span>
+            <span className="text-on-surface-variant text-sm">
               Resets at: {new Date(rateLimits.resetTime).toLocaleTimeString()}
-            </Typography>
-            <LinearProgress 
-              variant="determinate" 
-              value={(rateLimits.remaining / rateLimits.limit) * 100}
-              sx={{ 
-                width: 100,
-                height: 8,
-                borderRadius: 4,
-                bgcolor: 'rgba(0, 0, 0, 0.1)',
-                '& .MuiLinearProgress-bar': {
-                  bgcolor: rateLimits.remaining < 1000 ? '#ff9800' : '#4caf50',
-                  borderRadius: 4
-                }
-              }}
-            />
-          </Box>
-        </Paper>
+            </span>
+            <div className="w-24 h-2 bg-black/10 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${(rateLimits.remaining / rateLimits.limit) * 100}%`,
+                  backgroundColor: rateLimits.remaining < 1000 ? '#ff9800' : '#4caf50'
+                }}
+              />
+            </div>
+          </div>
+        </div>
       )}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h5" component="h1" gutterBottom>
-          GitHub Synchronization
-        </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
-          Sync your GitHub Actions workflow history with RunWatch. This will fetch historical data for all workflows in your organization's repositories.
-        </Typography>
 
-        <Stack spacing={3}>
-          <FormControl fullWidth>
-            <InputLabel id="org-select-label">Organization</InputLabel>
-            <Select
-              labelId="org-select-label"
+      {/* GitHub Synchronization */}
+      <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6">
+        <h2 className="text-on-surface text-xl font-semibold mb-2">GitHub Synchronization</h2>
+        <p className="text-on-surface-variant text-sm mb-6">
+          Sync your GitHub Actions workflow history with RunWatch. This will fetch historical data for all workflows in your organization's repositories.
+        </p>
+
+        <div className="space-y-4">
+          {/* Organization Select */}
+          <div>
+            <label className="block text-on-surface-variant text-sm mb-1">Organization</label>
+            <select
               value={selectedInstallation}
-              label="Organization"
               onChange={(e) => setSelectedInstallation(e.target.value)}
               disabled={syncing}
+              className="w-full bg-surface-container border border-outline-variant text-on-surface rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
             >
+              <option value="">Select an organization...</option>
               {organizations.map((org) => (
-                <MenuItem key={org.id} value={org.id}>
+                <option key={org.id} value={org.id}>
                   {org.account.login} ({org.account.type})
-                </MenuItem>
+                </option>
               ))}
-            </Select>
-          </FormControl>
+            </select>
+          </div>
 
-          <FormControl fullWidth>
-            <InputLabel id="run-limit-label">Workflow Runs Limit</InputLabel>
-            <Select
-              labelId="run-limit-label"
+          {/* Workflow Runs Limit */}
+          <div>
+            <label className="block text-on-surface-variant text-sm mb-1">Workflow Runs Limit</label>
+            <select
               value={maxWorkflowRuns}
-              label="Workflow Runs Limit"
               onChange={(e) => setMaxWorkflowRuns(e.target.value)}
               disabled={syncing}
+              className="w-full bg-surface-container border border-outline-variant text-on-surface rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary disabled:opacity-50"
             >
-              <MenuItem value={10}>Last 10 runs</MenuItem>
-              <MenuItem value={50}>Last 50 runs</MenuItem>
-              <MenuItem value={100}>Last 100 runs</MenuItem>
-              <MenuItem value={500}>Last 500 runs</MenuItem>
-              <MenuItem value={1000}>Last 1000 runs</MenuItem>
-            </Select>
-            <FormHelperText>
+              <option value={10}>Last 10 runs</option>
+              <option value={50}>Last 50 runs</option>
+              <option value={100}>Last 100 runs</option>
+              <option value={500}>Last 500 runs</option>
+              <option value={1000}>Last 1000 runs</option>
+            </select>
+            <p className="text-on-surface-variant text-xs mt-1">
               Limit the number of workflow runs to import per workflow
-            </FormHelperText>
-          </FormControl>
+            </p>
+          </div>
 
-          <Button
-            variant="contained"
-            startIcon={syncing ? <CircularProgress size={20} color="inherit" /> : <SyncIcon />}
+          <button
             onClick={handleSync}
             disabled={syncing || !selectedInstallation}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
           >
+            {syncing ? (
+              <span className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <span className="material-symbols-outlined text-base">sync</span>
+            )}
             {syncing ? 'Syncing...' : 'Sync GitHub Data'}
-          </Button>
-        </Stack>
+          </button>
+        </div>
 
+        {/* Progress */}
         {syncing && (
-          <Box sx={{ mt: 3 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                {progress}% Complete
-              </Typography>
+          <div className="mt-6">
+            <div className="flex flex-col gap-1 mb-3">
+              <p className="text-on-surface-variant text-sm">{progress}% Complete</p>
               {syncDetails && (
-                <Typography variant="body2" color="text.secondary">
+                <p className="text-on-surface-variant text-sm">
                   Repository {syncDetails.currentRepoIndex}/{syncDetails.totalRepos}
                   {syncDetails.currentWorkflowIndex !== undefined && ` • Workflow ${syncDetails.currentWorkflowIndex}/${syncDetails.totalWorkflows}`}
-                </Typography>
+                </p>
               )}
               {currentOperation && (
-                <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
+                <p className="text-on-surface-variant text-sm break-words">
                   Current: {currentOperation.repo} - {currentOperation.workflow}
-                </Typography>
+                </p>
               )}
-            </Box>
-            <LinearProgress 
-              variant="determinate" 
-              value={progress} 
-              sx={{
-                height: 8,
-                borderRadius: 4,
-                bgcolor: 'rgba(88, 166, 255, 0.1)',
-                '& .MuiLinearProgress-bar': {
-                  bgcolor: '#58A6FF',
-                  borderRadius: 4,
-                  transition: 'transform 0.3s ease'
-                }
-              }}
-            />
-          </Box>
+            </div>
+            <div className="w-full h-2 bg-primary/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
         )}
 
+        {/* Error */}
         {error && (
-          <Alert severity="error" sx={{ mt: 3 }}>
+          <div className="mt-6 p-3 rounded-xl border bg-error/10 border-error/30 text-error text-sm flex items-start gap-2">
+            <span className="material-symbols-outlined text-base mt-0.5">error</span>
             {error}
-          </Alert>
+          </div>
         )}
 
+        {/* Results */}
         {results && (
-          <Box sx={{ mt: 3 }}>
-            <Alert severity="success" sx={{ mb: 2 }}>
+          <div className="mt-6">
+            <div className="p-3 rounded-xl border bg-secondary/10 border-secondary/30 text-secondary text-sm flex items-center gap-2 mb-4">
+              <span className="material-symbols-outlined text-base">check_circle</span>
               Synchronization completed successfully!
-            </Alert>
-            
-            <List>
-              <ListItem>
-                <ListItemText 
-                  primary="Organization"
-                  secondary={results.organization}
-                />
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemText 
-                  primary="Repositories Processed"
-                  secondary={results.repositories}
-                />
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemText 
-                  primary="Workflows Found"
-                  secondary={results.workflows}
-                />
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemText 
-                  primary="Workflow Runs Synced"
-                  secondary={results.runs}
-                />
-              </ListItem>
-            </List>
+            </div>
+            <div className="space-y-2">
+              {[
+                { label: 'Organization', value: results.organization },
+                { label: 'Repositories Processed', value: results.repositories },
+                { label: 'Workflows Found', value: results.workflows },
+                { label: 'Workflow Runs Synced', value: results.runs },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex justify-between py-2 border-b border-outline-variant/50">
+                  <span className="text-on-surface-variant text-sm">{label}</span>
+                  <span className="text-on-surface text-sm">{value}</span>
+                </div>
+              ))}
+            </div>
 
             {results.errors && results.errors.length > 0 && (
-              <Alert severity="warning" sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Some items failed to sync:
-                </Typography>
-                <List dense>
+              <div className="mt-4 p-3 rounded-xl border bg-[rgba(245,159,0,0.1)] border-[rgba(245,159,0,0.3)] text-[#F5A623]">
+                <p className="text-sm font-medium mb-2">Some items failed to sync:</p>
+                <div className="space-y-1">
                   {results.errors.map((error, index) => (
-                    <ListItem key={index}>
-                      <ListItemText
-                        primary={`${error.type}: ${error.name || error.id}`}
-                        secondary={error.error}
-                      />
-                    </ListItem>
+                    <div key={index} className="text-xs">
+                      <span className="font-medium">{error.type}: {error.name || error.id}</span>
+                      <span className="opacity-70"> — {error.error}</span>
+                    </div>
                   ))}
-                </List>
-              </Alert>
+                </div>
+              </div>
             )}
-          </Box>
+          </div>
         )}
-      </Paper>
+      </div>
 
       {/* Sync History */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Sync History
-        </Typography>
-        <List>
+      <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6">
+        <h2 className="text-on-surface text-lg font-semibold mb-4">Sync History</h2>
+        <div className="space-y-0">
           {syncHistory.map((sync, index) => (
             <React.Fragment key={sync._id}>
-              {index > 0 && <Divider />}
-              <ListItemButton onClick={() => handleSyncClick(sync)}>
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography>{sync.organization.name}</Typography>
-                      <Chip 
-                        label={sync.status} 
-                        size="small"
-                        color={
-                          sync.status === 'completed' ? 'success' :
-                          sync.status === 'failed' ? 'error' :
-                          sync.status === 'in_progress' ? 'info' :
-                          sync.status === 'paused' ? 'warning' :
-                          sync.status === 'interrupted' ? 'error' : 'default'
-                        }
+              {index > 0 && <hr className="border-outline-variant" />}
+              <button
+                onClick={() => handleSyncClick(sync)}
+                className="w-full text-left px-1 py-3 hover:bg-primary/5 transition-colors rounded"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-on-surface text-sm">{sync.organization.name}</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${syncStatusColors[sync.status] || 'bg-outline/15 text-outline border-outline/20'}`}>
+                    {sync.status}
+                  </span>
+                </div>
+                <p className="text-on-surface-variant text-xs">
+                  Started {formatDistanceToNow(new Date(sync.startedAt))} ago
+                </p>
+                {sync.status === 'in_progress' && sync.results?.progress && (
+                  <div className="mt-2">
+                    <div className="w-full h-1 bg-primary/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full"
+                        style={{ width: `${sync.results.progress.current}%` }}
                       />
-                    </Box>
-                  }
-                  secondary={
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Started {formatDistanceToNow(new Date(sync.startedAt))} ago
-                      </Typography>
-                      {sync.status === 'in_progress' && sync.results?.progress && (
-                        <Box sx={{ mt: 1 }}>
-                          <LinearProgress 
-                            variant="determinate" 
-                            value={sync.results.progress.current} 
-                            sx={{
-                              height: 4,
-                              borderRadius: 2,
-                            }}
-                          />
-                          <Typography variant="caption" color="text.secondary">
-                            {sync.results.progress.current}% Complete
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  }
-                />
-              </ListItemButton>
+                    </div>
+                    <p className="text-on-surface-variant text-xs mt-0.5">
+                      {sync.results.progress.current}% Complete
+                    </p>
+                  </div>
+                )}
+              </button>
             </React.Fragment>
           ))}
           {syncHistory.length === 0 && (
-            <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+            <p className="text-on-surface-variant text-sm text-center py-4">
               No sync history available
-            </Typography>
+            </p>
           )}
-        </List>
-      </Paper>
+        </div>
+      </div>
 
-      <SyncHistoryDetails 
-        sync={selectedSync} 
-        onClose={() => setSelectedSync(null)} 
+      <SyncHistoryDetails
+        sync={selectedSync}
+        onClose={() => setSelectedSync(null)}
       />
-          <AdminTokenDialog
+      <AdminTokenDialog
         open={showTokenDialog}
         onClose={() => { setShowTokenDialog(false); setPendingAction(null); }}
         onSubmit={handleTokenSubmit}
         error={tokenError}
       />
-    </Box>
+    </div>
   );
 };
 

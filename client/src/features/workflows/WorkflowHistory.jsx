@@ -1,31 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  IconButton,
-  Tooltip,
-  Card,
-  CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  CircularProgress,
-  Button,
-  Stack,
-  Chip,
-} from '@mui/material';
-import {
-  ArrowBack as BackIcon,
-  Schedule as ScheduleIcon,
-  TrendingUp as TrendingUpIcon,
-  Speed as SpeedIcon,
-} from '@mui/icons-material';
 import { Line } from 'react-chartjs-2';
 import StatusChip from '../../common/components/StatusChip';
 import { formatDuration, formatDate } from '../../common/utils/statusHelpers';
@@ -50,7 +24,7 @@ const WorkflowHistory = () => {
     const completedRuns = runs.filter(run => run.run?.status === 'completed');
     const successfulRuns = runs.filter(run => run.run?.conclusion === 'success');
     const failedRuns = runs.filter(run => run.run?.conclusion === 'failure');
-    
+
     const durations = completedRuns
       .map(run => {
         if (!run.run) return null;
@@ -61,7 +35,7 @@ const WorkflowHistory = () => {
       })
       .filter(Boolean);
 
-    const avgDuration = durations.length 
+    const avgDuration = durations.length
       ? Math.floor(durations.reduce((acc, curr) => acc + curr, 0) / durations.length)
       : 0;
 
@@ -88,10 +62,7 @@ const WorkflowHistory = () => {
     });
 
     const dailyStats = last7Days.map(date => {
-      const dayRuns = runs.filter(run => 
-        run.run.created_at.startsWith(date)
-      );
-      
+      const dayRuns = runs.filter(run => run.run.created_at.startsWith(date));
       return {
         date,
         total: dayRuns.length,
@@ -132,11 +103,10 @@ const WorkflowHistory = () => {
   };
 
   const handleSyncRun = async (e, runId) => {
-    e.stopPropagation(); // Prevent row click
+    e.stopPropagation();
     try {
       setSyncingRun(runId);
       await apiService.syncWorkflowRun(runId);
-      // No need to manually update the UI since we have socket updates
     } catch (error) {
       console.error('Error syncing workflow run:', error);
     } finally {
@@ -145,12 +115,11 @@ const WorkflowHistory = () => {
   };
 
   const handleDeleteRun = async (e, runId) => {
-    e.stopPropagation(); // Prevent row click
+    e.stopPropagation();
     if (!window.confirm('Are you sure you want to delete this workflow run record?')) return;
     try {
       setDeletingRun(runId);
       await apiService.deleteWorkflowRun(runId);
-      // Remove from local state immediately
       setWorkflowRuns(prev => {
         const updated = prev.filter(w => w.run.id !== runId);
         setStats(calculateStats(updated));
@@ -170,7 +139,6 @@ const WorkflowHistory = () => {
         decodeURIComponent(repoName),
         decodeURIComponent(workflowName)
       );
-      
       setWorkflowRuns(response.data);
       setStats(calculateStats(response.data));
       setError(null);
@@ -185,10 +153,8 @@ const WorkflowHistory = () => {
   useEffect(() => {
     fetchWorkflowHistory();
 
-    // Set up socket listeners for real-time updates
     const cleanupListeners = setupSocketListeners({
       onWorkflowUpdate: (updatedWorkflow) => {
-        // Compare with the decoded workflowName since that's what we get from useParams
         if (updatedWorkflow.workflow.name === decodeURIComponent(workflowName) &&
             updatedWorkflow.repository.fullName === decodeURIComponent(repoName)) {
           setWorkflowRuns(prev => {
@@ -201,7 +167,6 @@ const WorkflowHistory = () => {
         }
       },
       onJobsUpdate: (workflowWithJobs) => {
-        // Compare with the decoded workflowName since that's what we get from useParams
         if (workflowWithJobs.workflow.name === decodeURIComponent(workflowName) &&
             workflowWithJobs.repository.fullName === decodeURIComponent(repoName)) {
           setWorkflowRuns(prev => {
@@ -227,312 +192,198 @@ const WorkflowHistory = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ mt: 4, textAlign: 'center' }}>
-        <Typography color="error">{error}</Typography>
-        <Button 
-          variant="contained" 
-          sx={{ mt: 2 }} 
+      <div className="mt-8 text-center">
+        <p className="text-error">{error}</p>
+        <button
           onClick={() => navigate('/')}
-          startIcon={<BackIcon />}
+          className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-sm hover:bg-primary/20"
         >
+          <span className="material-symbols-outlined text-base">arrow_back</span>
           Back to Dashboard
-        </Button>
-      </Box>
+        </button>
+      </div>
     );
   }
 
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { intersect: false, mode: 'index' },
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: { color: '#8B949E', boxWidth: 12, padding: 8, font: { size: 11 } }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(240,246,252,0.1)' },
+        ticks: { color: '#8B949E', font: { size: 10 } }
+      },
+      x: {
+        grid: { color: 'rgba(240,246,252,0.1)' },
+        ticks: { color: '#8B949E', font: { size: 10 } }
+      }
+    }
+  };
+
   return (
-    <Box sx={{ pb: 6 }}>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        mb: 4,
-        background: 'linear-gradient(90deg, rgba(88, 166, 255, 0.1) 0%, rgba(88, 166, 255, 0.05) 100%)',
-        p: 3,
-        borderRadius: '12px',
-        border: '1px solid rgba(88, 166, 255, 0.2)'
-      }}>
-        <Tooltip title="Back to Dashboard">
-          <IconButton onClick={() => navigate('/')} sx={{ mr: 2, color: '#E6EDF3' }}>
-            <BackIcon />
-          </IconButton>
-        </Tooltip>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{
-            fontWeight: 600,
-            fontSize: '1.75rem',
-            color: '#E6EDF3'
-          }}>
-            {workflowName}
-          </Typography>
-          <Typography variant="subtitle1" sx={{ color: '#8B949E' }}>
-            {repoName}
-          </Typography>
-        </Box>
-      </Box>
+    <div className="pb-12">
+      {/* Header */}
+      <div className="flex items-center mb-8 bg-primary/10 p-6 rounded-xl border border-primary/20">
+        <button
+          onClick={() => navigate('/')}
+          title="Back to Dashboard"
+          className="mr-4 p-2 rounded-lg text-on-surface hover:bg-primary/10 transition-colors"
+        >
+          <span className="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div>
+          <h1 className="text-2xl font-semibold text-on-surface">{workflowName}</h1>
+          <p className="text-on-surface-variant text-sm mt-0.5">{repoName}</p>
+        </div>
+      </div>
 
-      <Grid container spacing={2}>
-        {/* Left side metrics */}
-        <Grid item xs={12} md={4}>
-          <Stack spacing={2}>
-            <Card sx={{ bgcolor: '#161B22', border: '1px solid rgba(240, 246, 252, 0.1)' }}>
-              <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                  <ScheduleIcon sx={{ color: '#58A6FF', mr: 1, fontSize: '1rem' }} />
-                  <Typography sx={{ color: '#8B949E', fontSize: '0.875rem' }}>Average Duration</Typography>
-                </Box>
-                <Typography variant="h6" sx={{ color: '#E6EDF3', fontSize: '1.1rem' }}>
-                  {formatDuration(stats?.averageDuration || 0)}
-                </Typography>
-              </CardContent>
-            </Card>
+      {/* Stats + Chart */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="md:col-span-1 space-y-3">
+          <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-base text-primary">schedule</span>
+              <span className="text-on-surface-variant text-sm">Average Duration</span>
+            </div>
+            <p className="text-on-surface text-lg font-semibold">
+              {formatDuration(stats?.averageDuration || 0)}
+            </p>
+          </div>
 
-            <Card sx={{ bgcolor: '#161B22', border: '1px solid rgba(240, 246, 252, 0.1)' }}>
-              <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                  <TrendingUpIcon sx={{ color: '#58A6FF', mr: 1, fontSize: '1rem' }} />
-                  <Typography sx={{ color: '#8B949E', fontSize: '0.875rem' }}>Success Rate</Typography>
-                </Box>
-                <Typography variant="h6" sx={{ color: '#E6EDF3', fontSize: '1.1rem' }}>
-                  {stats?.successRate.toFixed(1)}%
-                </Typography>
-              </CardContent>
-            </Card>
+          <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-base text-primary">trending_up</span>
+              <span className="text-on-surface-variant text-sm">Success Rate</span>
+            </div>
+            <p className="text-on-surface text-lg font-semibold">
+              {stats?.successRate.toFixed(1)}%
+            </p>
+          </div>
 
-            <Card sx={{ bgcolor: '#161B22', border: '1px solid rgba(240, 246, 252, 0.1)' }}>
-              <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-                  <SpeedIcon sx={{ color: '#58A6FF', mr: 1, fontSize: '1rem' }} />
-                  <Typography sx={{ color: '#8B949E', fontSize: '0.875rem' }}>Total Runs</Typography>
-                </Box>
-                <Typography variant="h6" sx={{ color: '#E6EDF3', fontSize: '1.1rem' }}>
-                  {stats?.totalRuns || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Stack>
-        </Grid>
+          <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-base text-primary">speed</span>
+              <span className="text-on-surface-variant text-sm">Total Runs</span>
+            </div>
+            <p className="text-on-surface text-lg font-semibold">{stats?.totalRuns || 0}</p>
+          </div>
+        </div>
 
-        {/* Right side activity chart */}
-        <Grid item xs={12} md={8}>
-          <Paper elevation={0} sx={{ 
-            p: 2,
-            height: '100%',
-            bgcolor: '#161B22',
-            borderRadius: '12px',
-            border: '1px solid rgba(240, 246, 252, 0.1)',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <Typography variant="h6" sx={{ color: '#E6EDF3', mb: 2, fontSize: '1rem' }}>
-              Activity Trends
-            </Typography>
-            <Box sx={{ flex: 1, minHeight: 200 }}>
-              <Line
-                data={stats?.trendsData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  interaction: {
-                    intersect: false,
-                    mode: 'index'
-                  },
-                  plugins: {
-                    legend: {
-                      position: 'top',
-                      labels: {
-                        color: '#8B949E',
-                        boxWidth: 12,
-                        padding: 8,
-                        font: {
-                          size: 11
-                        }
-                      }
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      grid: {
-                        color: 'rgba(240, 246, 252, 0.1)'
-                      },
-                      ticks: {
-                        color: '#8B949E',
-                        font: {
-                          size: 10
-                        }
-                      }
-                    },
-                    x: {
-                      grid: {
-                        color: 'rgba(240, 246, 252, 0.1)'
-                      },
-                      ticks: {
-                        color: '#8B949E',
-                        font: {
-                          size: 10
-                        }
-                      }
-                    }
-                  }
-                }}
-              />
-            </Box>
-          </Paper>
-        </Grid>
+        <div className="md:col-span-3 bg-surface-container-low border border-outline-variant rounded-xl p-4 flex flex-col">
+          <h2 className="text-on-surface text-base font-medium mb-4">Activity Trends</h2>
+          <div className="flex-1 min-h-[200px]">
+            <Line data={stats?.trendsData} options={chartOptions} />
+          </div>
+        </div>
+      </div>
 
-        {/* Workflow Runs Table */}
-        <Grid item xs={12}>
-          <Paper elevation={0} sx={{ 
-            bgcolor: '#161B22',
-            borderRadius: '12px',
-            border: '1px solid rgba(240, 246, 252, 0.1)'
-          }}>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ color: '#8B949E' }}>Status</TableCell>
-                    <TableCell sx={{ color: '#8B949E' }}>Run #</TableCell>
-                    <TableCell sx={{ color: '#8B949E' }}>Branch</TableCell>
-                    <TableCell sx={{ color: '#8B949E' }}>Event</TableCell>
-                    <TableCell sx={{ color: '#8B949E' }}>Labels</TableCell>
-                    <TableCell sx={{ color: '#8B949E' }}>Duration</TableCell>
-                    <TableCell sx={{ color: '#8B949E' }}>Started</TableCell>
-                    <TableCell sx={{ color: '#8B949E' }}>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {workflowRuns.map((workflow) => (
-                    <TableRow 
-                      key={workflow.run.id} 
-                      hover
-                      onClick={() => navigate(`/workflow/${workflow.run.id}`)}
-                      sx={{ 
-                        cursor: 'pointer',
-                        '&:hover': {
-                          bgcolor: 'rgba(88, 166, 255, 0.05)'
-                        }
-                      }}
-                    >
-                      <TableCell>
-                        <StatusChip 
-                          status={workflow.run.status}
-                          conclusion={workflow.run.conclusion}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ color: '#E6EDF3' }}>
-                        {workflow.run.number ? `#${workflow.run.number}` : '#-'}
-                      </TableCell>
-                      <TableCell sx={{ color: '#E6EDF3' }}>
-                        {workflow.run.head_branch || '-'}
-                      </TableCell>
-                      <TableCell sx={{ color: '#E6EDF3' }}>
-                        {workflow.run.event || '-'}
-                      </TableCell>
-                      <TableCell>
-                        {workflow.run.labels?.map((label, index) => (
-                          <Chip
-                            key={index}
-                            label={label}
-                            size="small"
-                            sx={{
-                              m: 0.5,
-                              bgcolor: '#21262D',
-                              color: '#E6EDF3',
-                              borderRadius: '12px',
-                              '& .MuiChip-label': {
-                                fontSize: '0.75rem'
-                              }
-                            }}
-                          />
-                        ))}
-                      </TableCell>
-                      <TableCell sx={{ color: '#E6EDF3' }}>
-                        {formatDuration(workflow.run.created_at, workflow.run.updated_at)}
-                      </TableCell>
-                      <TableCell sx={{ color: '#E6EDF3' }}>
-                        {formatDate(workflow.run.created_at)}
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={1}>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(workflow.run.url, '_blank', 'noopener,noreferrer');
-                            }}
-                            sx={{ 
-                              borderColor: 'rgba(88, 166, 255, 0.2)',
-                              color: '#58A6FF',
-                              '&:hover': {
-                                borderColor: 'rgba(88, 166, 255, 0.5)',
-                                bgcolor: 'rgba(88, 166, 255, 0.1)'
-                              }
-                            }}
-                          >
-                            View on GitHub
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={(e) => handleSyncRun(e, workflow.run.id)}
-                            disabled={syncingRun === workflow.run.id}
-                            sx={{ 
-                              borderColor: 'rgba(88, 166, 255, 0.2)',
-                              color: '#58A6FF',
-                              '&:hover': {
-                                borderColor: 'rgba(88, 166, 255, 0.5)',
-                                bgcolor: 'rgba(88, 166, 255, 0.1)'
-                              }
-                            }}
-                          >
-                            {syncingRun === workflow.run.id ? (
-                              <CircularProgress size={16} sx={{ color: '#58A6FF' }} />
-                            ) : (
-                              'Sync'
-                            )}
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={(e) => handleDeleteRun(e, workflow.run.id)}
-                            disabled={deletingRun === workflow.run.id}
-                            sx={{ 
-                              borderColor: 'rgba(248, 81, 73, 0.2)',
-                              color: '#F85149',
-                              '&:hover': {
-                                borderColor: 'rgba(248, 81, 73, 0.5)',
-                                bgcolor: 'rgba(248, 81, 73, 0.1)'
-                              }
-                            }}
-                          >
-                            {deletingRun === workflow.run.id ? (
-                              <CircularProgress size={16} sx={{ color: '#F85149' }} />
-                            ) : (
-                              'Delete'
-                            )}
-                          </Button>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
+      {/* Runs Table */}
+      <div className="bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-outline-variant">
+                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Status</th>
+                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Run #</th>
+                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Branch</th>
+                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Event</th>
+                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Labels</th>
+                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Duration</th>
+                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Started</th>
+                <th className="text-left px-4 py-3 text-on-surface-variant font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {workflowRuns.map((workflow) => (
+                <tr
+                  key={workflow.run.id}
+                  onClick={() => navigate(`/workflow/${workflow.run.id}`)}
+                  className="border-b border-outline-variant/50 cursor-pointer hover:bg-primary/5 transition-colors"
+                >
+                  <td className="px-4 py-3">
+                    <StatusChip status={workflow.run.status} conclusion={workflow.run.conclusion} />
+                  </td>
+                  <td className="px-4 py-3 text-on-surface">
+                    {workflow.run.number ? `#${workflow.run.number}` : '#-'}
+                  </td>
+                  <td className="px-4 py-3 text-on-surface">
+                    {workflow.run.head_branch || '-'}
+                  </td>
+                  <td className="px-4 py-3 text-on-surface">
+                    {workflow.run.event || '-'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {workflow.run.labels?.map((label, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-0.5 bg-surface-container-high text-on-surface rounded-full text-xs"
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-on-surface">
+                    {formatDuration(workflow.run.created_at, workflow.run.updated_at)}
+                  </td>
+                  <td className="px-4 py-3 text-on-surface">
+                    {formatDate(workflow.run.created_at)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(workflow.run.url, '_blank', 'noopener,noreferrer');
+                        }}
+                        className="px-3 py-1 border border-primary/20 text-primary rounded-lg text-xs hover:border-primary/50 hover:bg-primary/10 transition-colors"
+                      >
+                        GitHub
+                      </button>
+                      <button
+                        onClick={(e) => handleSyncRun(e, workflow.run.id)}
+                        disabled={syncingRun === workflow.run.id}
+                        className="px-3 py-1 border border-primary/20 text-primary rounded-lg text-xs hover:border-primary/50 hover:bg-primary/10 disabled:opacity-50 transition-colors"
+                      >
+                        {syncingRun === workflow.run.id ? (
+                          <span className="inline-block w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin" />
+                        ) : 'Sync'}
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteRun(e, workflow.run.id)}
+                        disabled={deletingRun === workflow.run.id}
+                        className="px-3 py-1 border border-error/20 text-error rounded-lg text-xs hover:border-error/50 hover:bg-error/10 disabled:opacity-50 transition-colors"
+                      >
+                        {deletingRun === workflow.run.id ? (
+                          <span className="inline-block w-3 h-3 border border-error border-t-transparent rounded-full animate-spin" />
+                        ) : 'Delete'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   );
 };
 
