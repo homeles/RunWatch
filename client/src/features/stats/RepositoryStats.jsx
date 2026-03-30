@@ -82,15 +82,15 @@ const RepositoryStats = () => {
           {
             label: 'Successful Runs',
             data: successData,
-            backgroundColor: 'rgba(35, 197, 98, 0.6)',
-            borderColor: 'rgba(35, 197, 98, 1)',
+            backgroundColor: 'rgba(103, 223, 112, 0.6)',
+            borderColor: 'rgba(103, 223, 112, 1)',
             borderWidth: 1,
           },
           {
             label: 'Failed Runs',
             data: failureData,
-            backgroundColor: 'rgba(248, 81, 73, 0.6)',
-            borderColor: 'rgba(248, 81, 73, 1)',
+            backgroundColor: 'rgba(255, 180, 171, 0.6)',
+            borderColor: 'rgba(255, 180, 171, 1)',
             borderWidth: 1,
           }
         ]
@@ -100,8 +100,8 @@ const RepositoryStats = () => {
         datasets: [{
           label: 'Success Rate (%)',
           data: successRates,
-          backgroundColor: 'rgba(88, 166, 255, 0.6)',
-          borderColor: 'rgba(88, 166, 255, 1)',
+          backgroundColor: 'rgba(162, 201, 255, 0.6)',
+          borderColor: 'rgba(162, 201, 255, 1)',
           borderWidth: 1,
         }]
       }
@@ -147,10 +147,12 @@ const RepositoryStats = () => {
       datasets: [{
         label: 'Workflow Activity',
         data: counts,
-        borderColor: 'rgba(88, 166, 255, 1)',
-        backgroundColor: 'rgba(88, 166, 255, 0.5)',
+        borderColor: 'rgba(162, 201, 255, 1)',
+        backgroundColor: 'rgba(162, 201, 255, 0.15)',
         tension: 0.4,
         fill: true,
+        pointBackgroundColor: 'rgba(162, 201, 255, 1)',
+        pointRadius: 3,
       }],
     };
   }, [stats]);
@@ -179,168 +181,261 @@ const RepositoryStats = () => {
   }
 
   const chartScales = {
-    y: { beginAtZero: true, grid: { color: 'rgba(240,246,252,0.1)' }, ticks: { color: '#8B949E' } },
-    x: { grid: { color: 'rgba(240,246,252,0.1)' }, ticks: { color: '#8B949E' } }
+    y: {
+      beginAtZero: true,
+      grid: { color: 'rgba(65,71,82,0.4)' },
+      ticks: { color: '#8b919d' },
+      border: { color: 'rgba(65,71,82,0.4)' },
+    },
+    x: {
+      grid: { display: false },
+      ticks: { color: '#8b919d' },
+      border: { color: 'rgba(65,71,82,0.4)' },
+    },
   };
+
+  const globalSuccessRate = (() => {
+    if (!stats.orgStats) return null;
+    const totalSuccess = Object.values(stats.orgStats).reduce((a, o) => a + o.successfulRuns, 0);
+    const totalRuns = Object.values(stats.orgStats).reduce((a, o) => a + o.totalRuns, 0);
+    return totalRuns ? (totalSuccess / totalRuns * 100).toFixed(1) : null;
+  })();
 
   return (
     <div className="pb-12">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8 bg-primary/10 p-6 rounded-xl border border-primary/20">
-        <h1 className="text-2xl font-semibold text-on-surface">Organization Statistics</h1>
-        <button
-          onClick={fetchStats}
-          title="Refresh"
-          className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
-        >
-          <span className="material-symbols-outlined">refresh</span>
-        </button>
-      </div>
+      <header className="mb-10">
+        <h2 className="text-3xl font-extrabold tracking-tight text-on-surface mb-2">Statistics</h2>
+        <p className="text-outline text-sm">
+          System-wide performance metrics and velocity analysis for CI/CD pipelines.
+        </p>
+      </header>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6">
-          <p className="text-on-surface-variant text-sm mb-2">Total Organizations</p>
-          <p className="text-on-surface text-4xl font-bold">
-            {stats.orgStats ? Object.keys(stats.orgStats).length : 0}
-          </p>
+      {/* KPI Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {/* Total Organizations */}
+        <div className="bg-surface-container-low p-6 rounded-lg relative overflow-hidden border-l-4 border-primary">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-xs font-bold text-outline tracking-widest uppercase mb-1">Total Organizations</p>
+              <h3 className="text-4xl font-black text-on-surface tracking-tighter">
+                {stats.orgStats ? Object.keys(stats.orgStats).length : 0}
+              </h3>
+            </div>
+            <span className="material-symbols-outlined text-primary/20 text-4xl">corporate_fare</span>
+          </div>
+          <div className="mt-4 flex items-center text-xs text-secondary font-medium">
+            <span className="material-symbols-outlined text-xs mr-1">trending_up</span>
+            <span>Stable enterprise context</span>
+          </div>
         </div>
-        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6">
-          <p className="text-on-surface-variant text-sm mb-2">Total Repositories</p>
-          <p className="text-on-surface text-4xl font-bold">{stats.repoStats?.length || 0}</p>
+
+        {/* Total Repositories */}
+        <div className="bg-surface-container-low p-6 rounded-lg relative overflow-hidden border-l-4 border-secondary">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-xs font-bold text-outline tracking-widest uppercase mb-1">Total Repositories</p>
+              <h3 className="text-4xl font-black text-on-surface tracking-tighter">
+                {stats.repoStats?.length || 0}
+              </h3>
+            </div>
+            <span className="material-symbols-outlined text-secondary/20 text-4xl">folder_zip</span>
+          </div>
+          <div className="mt-4 flex items-center text-xs text-primary font-medium">
+            <span className="material-symbols-outlined text-xs mr-1">add</span>
+            <span>Active repositories</span>
+          </div>
         </div>
-        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6">
-          <p className="text-on-surface-variant text-sm mb-2">Total Workflow Runs</p>
-          <p className="text-on-surface text-4xl font-bold">{stats.totalRuns || 0}</p>
+
+        {/* Total Workflow Runs */}
+        <div className="bg-surface-container-low p-6 rounded-lg relative overflow-hidden border-l-4 border-tertiary">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-xs font-bold text-outline tracking-widest uppercase mb-1">Total Workflow Runs</p>
+              <h3 className="text-4xl font-black text-on-surface tracking-tighter">
+                {(stats.totalRuns || 0).toLocaleString()}
+              </h3>
+            </div>
+            <span className="material-symbols-outlined text-tertiary/20 text-4xl">rocket_launch</span>
+          </div>
+          <div className="mt-4 flex items-center text-xs text-secondary font-medium">
+            <span className="material-symbols-outlined text-xs mr-1">insights</span>
+            <span>
+              {globalSuccessRate ? `${globalSuccessRate}% success rate avg` : 'No run data yet'}
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Organization Overview Chart */}
-      <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6 mb-6">
-        <h2 className="text-on-surface text-base font-medium mb-6">Organization Overview</h2>
-        <div className="h-[400px]">
+      <section className="bg-surface-container mb-10 rounded-lg p-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h4 className="text-lg font-bold text-on-surface">Organization Overview</h4>
+            <p className="text-xs text-outline uppercase tracking-widest mt-1">Aggregate Health &amp; Reliability Index</p>
+          </div>
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2">
+              <span className="w-3 h-3 rounded-full bg-secondary inline-block"></span>
+              <span className="text-xs text-outline font-semibold uppercase">Success</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="w-3 h-3 rounded-full bg-error inline-block"></span>
+              <span className="text-xs text-outline font-semibold uppercase">Failure</span>
+            </div>
+            <button
+              onClick={fetchStats}
+              title="Refresh"
+              className="text-outline hover:text-primary transition-colors ml-2"
+            >
+              <span className="material-symbols-outlined text-sm">refresh</span>
+            </button>
+          </div>
+        </div>
+        <div className="h-[300px]">
           <Bar
             data={prepareOrgChartData(stats.orgStats)?.overview}
             options={{
               responsive: true,
               maintainAspectRatio: false,
-              plugins: { legend: { position: 'top', labels: { color: '#8B949E' } } },
-              scales: chartScales
+              plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor: '#1c2026', titleColor: '#dfe2eb', bodyColor: '#8b919d' },
+              },
+              scales: chartScales,
             }}
           />
         </div>
-      </div>
+      </section>
 
-      {/* Success Rates + Weekly Trend */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6">
-          <h2 className="text-on-surface text-base font-medium mb-6">Success Rates by Organization</h2>
-          <div className="h-[300px]">
-            <Bar
-              data={prepareOrgChartData(stats.orgStats)?.successRates}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    max: 100,
-                    grid: { color: 'rgba(240,246,252,0.1)' },
-                    ticks: { color: '#8B949E', callback: (value) => `${value}%` }
-                  },
-                  x: chartScales.x
-                }
-              }}
-            />
+      {/* Dual Column: Success Rates + Weekly Trend */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+        {/* Success Rates by Organization — horizontal progress bars */}
+        <div className="bg-surface-container-low p-8 rounded-lg">
+          <h4 className="text-sm font-bold text-outline uppercase tracking-[0.2em] mb-8">
+            Success Rates by Organization
+          </h4>
+          <div className="space-y-6">
+            {stats.orgStats && Object.entries(stats.orgStats).map(([orgName, orgData]) => {
+              const rate = orgData.totalRuns
+                ? (orgData.successfulRuns / orgData.totalRuns * 100)
+                : 0;
+              const isLow = rate < 70;
+              return (
+                <div key={orgName} className="space-y-2">
+                  <div className="flex justify-between items-end">
+                    <span className="text-sm font-bold text-on-surface">{orgName}</span>
+                    <span className={`text-xs font-mono ${isLow ? 'text-error' : 'text-secondary'}`}>
+                      {rate.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${isLow ? 'bg-error' : 'bg-secondary'}`}
+                      style={{ width: `${rate}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="bg-surface-container-low border border-outline-variant rounded-xl p-6">
-          <h2 className="text-on-surface text-base font-medium mb-6">Weekly Activity Trend</h2>
-          <div className="h-[300px]">
+        {/* Weekly Activity Trend */}
+        <div className="bg-surface-container-low p-8 rounded-lg">
+          <h4 className="text-sm font-bold text-outline uppercase tracking-[0.2em] mb-8">
+            Weekly Activity Trend
+          </h4>
+          <div className="h-[200px]">
             <Line
               data={trendData}
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: chartScales
+                plugins: {
+                  legend: { display: false },
+                  tooltip: { backgroundColor: '#1c2026', titleColor: '#dfe2eb', bodyColor: '#8b919d' },
+                },
+                scales: chartScales,
               }}
             />
           </div>
         </div>
       </div>
 
-      {/* Organization Details */}
-      {stats.orgStats && Object.entries(stats.orgStats).map(([orgName, orgData]) => (
-        <div
-          key={orgName}
-          className="bg-surface-container-low border border-outline-variant rounded-xl p-6 mb-6"
-        >
-          <h2 className="text-on-surface text-base font-medium mb-6 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">hub</span>
-            {orgName}
-          </h2>
-
-          {/* Org Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <div className="bg-surface/30 border border-outline-variant rounded-xl p-4">
-              <p className="text-on-surface-variant text-xs mb-1">Success Rate</p>
-              <p className="text-secondary font-semibold text-lg">
-                {orgData.totalRuns ? (orgData.successfulRuns / orgData.totalRuns * 100).toFixed(1) : 0}%
-              </p>
-            </div>
-            <div className="bg-surface/30 border border-outline-variant rounded-xl p-4">
-              <p className="text-on-surface-variant text-xs mb-1">Total Runs</p>
-              <p className="text-on-surface font-semibold text-lg">{orgData.totalRuns}</p>
-            </div>
-            <div className="bg-surface/30 border border-outline-variant rounded-xl p-4">
-              <p className="text-on-surface-variant text-xs mb-1">Repositories</p>
-              <p className="text-on-surface font-semibold text-lg">{orgData.repositories.length}</p>
-            </div>
-            <div className="bg-surface/30 border border-outline-variant rounded-xl p-4">
-              <p className="text-on-surface-variant text-xs mb-1">Avg Duration</p>
-              <p className="text-on-surface font-semibold text-lg">{formatDuration(orgData.avgDuration)}</p>
-            </div>
-          </div>
-
-          {/* Repository List */}
-          <div className="space-y-3">
-            {orgData.repositories.map((repo) => (
-              <div
-                key={repo._id}
-                className="bg-surface/30 border border-outline-variant rounded-xl p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <p
-                    onClick={() => navigate(`/repository/${encodeURIComponent(repo._id)}`)}
-                    className="text-on-surface font-medium cursor-pointer hover:text-primary transition-colors"
-                  >
-                    {repo._id.split('/')[1]}
-                  </p>
-                  <div className="flex gap-6">
-                    <div>
-                      <p className="text-on-surface-variant text-xs">Success Rate</p>
-                      <p className="text-secondary font-medium">
-                        {repo.totalRuns ? (repo.successfulRuns / repo.totalRuns * 100).toFixed(1) : 0}%
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-on-surface-variant text-xs">Total Runs</p>
-                      <p className="text-on-surface font-medium">{repo.totalRuns}</p>
-                    </div>
-                    <div>
-                      <p className="text-on-surface-variant text-xs">Avg. Duration</p>
-                      <p className="text-on-surface font-medium">{formatDuration(repo.avgDuration)}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+      {/* Repository Breakdown Table */}
+      <section className="bg-surface-container rounded-lg overflow-hidden border border-outline-variant/10">
+        <div className="px-8 py-6 border-b border-outline-variant/10 flex justify-between items-center">
+          <div>
+            <h4 className="text-lg font-bold text-on-surface">Repository Breakdown</h4>
+            <p className="text-xs text-outline uppercase tracking-widest mt-0.5">Performance Granularity</p>
           </div>
         </div>
-      ))}
+        <table className="w-full text-left">
+          <thead className="bg-surface-container-low/50">
+            <tr>
+              <th className="px-8 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">
+                Repository Name
+              </th>
+              <th className="px-8 py-4 text-[10px] font-bold text-outline uppercase tracking-widest">
+                Success Rate
+              </th>
+              <th className="px-8 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-center">
+                Total Runs
+              </th>
+              <th className="px-8 py-4 text-[10px] font-bold text-outline uppercase tracking-widest text-right">
+                Avg Duration
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-outline-variant/10">
+            {stats.repoStats?.map((repo) => {
+              const rate = repo.totalRuns
+                ? (repo.successfulRuns / repo.totalRuns * 100)
+                : 0;
+              const isLow = rate < 70;
+              const repoShortName = repo._id.includes('/')
+                ? repo._id.split('/')[1]
+                : repo._id;
+              return (
+                <tr
+                  key={repo._id}
+                  onClick={() => navigate(`/repository/${encodeURIComponent(repo._id)}`)}
+                  className="hover:bg-surface-container-high transition-colors group cursor-pointer"
+                >
+                  <td className="px-8 py-5">
+                    <div className="flex items-center">
+                      <span className="material-symbols-outlined text-outline text-lg mr-3">code</span>
+                      <span className="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">
+                        {repoShortName}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-8 py-5">
+                    <div className="flex items-center space-x-3">
+                      <span className={`text-sm font-mono ${isLow ? 'text-error' : 'text-secondary'}`}>
+                        {rate.toFixed(1)}%
+                      </span>
+                      <div className="w-16 h-1 bg-surface-container-highest rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${isLow ? 'bg-error' : 'bg-secondary'}`}
+                          style={{ width: `${rate}%` }}
+                        />
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-8 py-5 text-center text-sm font-mono text-outline">
+                    {repo.totalRuns}
+                  </td>
+                  <td className="px-8 py-5 text-right text-sm font-mono text-on-surface">
+                    {formatDuration(repo.avgDuration)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
 };
