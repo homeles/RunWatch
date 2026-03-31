@@ -35,6 +35,25 @@ const getDotClass = (run) => {
 
 const CARD_BORDER_COLORS = ['border-secondary', 'border-primary', 'border-tertiary', 'border-error'];
 
+// Compute success-rate-based border color for a repo card
+const getRepoBorderColor = (repoData) => {
+  let total = 0;
+  let success = 0;
+  Object.values(repoData.workflows).forEach((wf) => {
+    wf.runs.forEach((r) => {
+      if (r.run.status === 'completed') {
+        total++;
+        if (r.run.conclusion === 'success') success++;
+      }
+    });
+  });
+  if (total === 0) return 'border-outline-variant'; // no completed runs
+  const rate = (success / total) * 100;
+  if (rate >= 80) return 'border-secondary';
+  if (rate >= 50) return 'border-tertiary';
+  return 'border-error';
+};
+
 const STATUS_OPTIONS = [
   { label: 'All Status', value: 'all' },
   { label: 'In Progress', value: 'in_progress' },
@@ -701,7 +720,7 @@ const Dashboard = () => {
                   key={repoKey}
                   repoKey={repoKey}
                   repoData={repoData}
-                  borderColor={CARD_BORDER_COLORS[idx % CARD_BORDER_COLORS.length]}
+                  borderColor={getRepoBorderColor(repoData)}
                   navigate={navigate}
                   longQueuedWorkflows={longQueuedWorkflows}
                 />
