@@ -1,19 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  Box,
-  LinearProgress,
-  Chip,
-  Stack,
-  Alert,
-  IconButton
-} from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { socket } from '../../api/socketService';
 import apiService from '../../api/apiService';
@@ -32,32 +17,20 @@ const SyncHistoryDetails = ({ sync: initialSync, onClose }) => {
       try {
         const response = await apiService.getSyncHistory();
         const updatedSync = response.data.find(s => s._id === sync._id);
-        if (updatedSync) {
-          setSync(updatedSync);
-        }
+        if (updatedSync) { setSync(updatedSync); }
       } catch (error) {
         console.error('Failed to fetch sync details:', error);
       }
     };
 
-    // Set up socket listeners for real-time updates
     socket.on('syncProgress', async (data) => {
-      if (sync.status === 'in_progress') {
-        await updateSyncDetails();
-      }
+      if (sync.status === 'in_progress') { await updateSyncDetails(); }
     });
-
     socket.on('rateLimitUpdate', async () => {
-      if (sync.status === 'in_progress') {
-        await updateSyncDetails();
-      }
+      if (sync.status === 'in_progress') { await updateSyncDetails(); }
     });
+    socket.on('syncStatus', async () => { await updateSyncDetails(); });
 
-    socket.on('syncStatus', async () => {
-      await updateSyncDetails();
-    });
-
-    // Cleanup function
     return () => {
       socket.off('syncProgress');
       socket.off('rateLimitUpdate');
@@ -65,18 +38,17 @@ const SyncHistoryDetails = ({ sync: initialSync, onClose }) => {
     };
   }, [sync?._id, sync?.status]);
 
-  const getStatusColor = (status) => {
+  const getStatusClasses = (status) => {
     switch (status) {
-      case 'completed': return 'success';
-      case 'failed': return 'error';
-      case 'in_progress': return 'info';
-      case 'paused': return 'warning';
-      case 'interrupted': return 'error';
-      default: return 'default';
+      case 'completed': return 'bg-secondary/15 text-secondary border-secondary/20';
+      case 'failed':
+      case 'interrupted': return 'bg-error/15 text-error border-error/20';
+      case 'in_progress': return 'bg-primary/15 text-primary border-primary/20';
+      case 'paused': return 'bg-[rgba(245,159,0,0.15)] text-[#F5A623] border-[rgba(245,159,0,0.2)]';
+      default: return 'bg-outline/15 text-outline border-outline/20';
     }
   };
 
-  // Get the progress to display - either current progress or last progress before interruption
   const getProgressDetails = () => {
     if (sync.status === 'interrupted' && sync.results?.lastProgress) {
       return sync.results.lastProgress;
@@ -84,7 +56,6 @@ const SyncHistoryDetails = ({ sync: initialSync, onClose }) => {
     return sync.results?.progress;
   };
 
-  // Get the results summary including total repositories
   const getResultsSummary = () => {
     const progress = getProgressDetails();
     const total = sync.results?.totalRepositories || progress?.totalRepos || 0;
@@ -104,163 +75,160 @@ const SyncHistoryDetails = ({ sync: initialSync, onClose }) => {
     };
   };
 
-  return (
-    <Dialog 
-      open={Boolean(sync)} 
-      onClose={onClose} 
-      maxWidth="md" 
-      fullWidth
-      aria-labelledby="sync-details-dialog-title"
-    >
-      {sync && (
-        <>
-          <DialogTitle id="sync-details-dialog-title" sx={{ pr: 6 }}>
-            Sync Details - {format(new Date(sync.startedAt), 'PPpp')}
-            <IconButton
-              aria-label="close"
-              onClick={onClose}
-              sx={{
-                position: 'absolute',
-                right: 8,
-                top: 8,
-                color: (theme) => theme.palette.grey[500],
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent dividers>
-            <Stack spacing={2}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Status: <Chip label={sync.status} color={getStatusColor(sync.status)} />
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Organization: {sync.organization.name} ({sync.organization.type})
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Workflow Run Limit: {sync.config?.maxWorkflowRuns || 'Not set'} runs per workflow
-                </Typography>
-                {sync.completedAt && (
-                  <Typography variant="body2" color="text.secondary">
-                    Completed: {format(new Date(sync.completedAt), 'PPpp')}
-                  </Typography>
-                )}
-              </Box>
+  if (!sync) return null;
 
-              {(sync.status === 'in_progress' || sync.status === 'paused' || 
-                (sync.status === 'interrupted' && sync.results?.lastProgress)) && (
-                <>
-                  {getProgressDetails() && (
-                    <Box>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Progress: {getProgressDetails().current}%
-                      </Typography>
-                      <LinearProgress 
-                        variant="determinate" 
-                        value={getProgressDetails().current} 
-                        sx={{
-                          height: 8,
-                          borderRadius: 4,
-                          bgcolor: 'rgba(88, 166, 255, 0.1)',
-                          '& .MuiLinearProgress-bar': {
-                            bgcolor: sync.status === 'interrupted' ? '#f44336' : '#58A6FF',
-                            borderRadius: 4
-                          }
+  const progressDetails = getProgressDetails();
+  const showProgress = sync.status === 'in_progress' || sync.status === 'paused' ||
+    (sync.status === 'interrupted' && sync.results?.lastProgress);
+  const summary = getResultsSummary();
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface-container-low border border-outline-variant rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-outline-variant">
+          <h2 className="text-on-surface font-semibold">
+            Sync Details — {format(new Date(sync.startedAt), 'PPpp')}
+          </h2>
+          <button
+            onClick={onClose}
+            aria-label="close"
+            className="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Status + Meta */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-on-surface text-sm">Status:</span>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusClasses(sync.status)}`}>
+                {sync.status}
+              </span>
+            </div>
+            <p className="text-on-surface-variant text-sm">
+              Organization: {sync.organization.name} ({sync.organization.type})
+            </p>
+            <p className="text-on-surface-variant text-sm">
+              Workflow Run Limit: {sync.config?.maxWorkflowRuns || 'Not set'} runs per workflow
+            </p>
+            {sync.completedAt && (
+              <p className="text-on-surface-variant text-sm">
+                Completed: {format(new Date(sync.completedAt), 'PPpp')}
+              </p>
+            )}
+          </div>
+
+          {/* Progress */}
+          {showProgress && progressDetails && (
+            <div className="space-y-3">
+              <div>
+                <p className="text-on-surface-variant text-sm mb-1">
+                  Progress: {progressDetails.current}%
+                </p>
+                <div className="w-full h-2 bg-primary/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${progressDetails.current}%`,
+                      backgroundColor: sync.status === 'interrupted' ? '#f44336' : '#58A6FF'
+                    }}
+                  />
+                </div>
+                {progressDetails.currentRepo && (
+                  <div className="mt-2">
+                    <p className="text-on-surface text-sm">
+                      Processing: {progressDetails.currentRepo}
+                      {progressDetails.currentWorkflow && ` — ${progressDetails.currentWorkflow}`}
+                    </p>
+                    <p className="text-on-surface-variant text-sm">
+                      Repository {progressDetails.repoIndex + 1}/{progressDetails.totalRepos}
+                      {progressDetails.workflowIndex !== null &&
+                       progressDetails.totalWorkflows &&
+                       ` • Workflow ${progressDetails.workflowIndex + 1}/${progressDetails.totalWorkflows}`}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Rate Limits */}
+              {sync.results?.rateLimits && (
+                <div className="p-3 bg-surface/50 rounded-xl">
+                  <p className="text-on-surface text-sm font-medium mb-2">GitHub API Rate Limits</p>
+                  <div className="flex items-center gap-4">
+                    <span className="text-on-surface-variant text-sm">
+                      Remaining: {sync.results.rateLimits.remaining}/{sync.results.rateLimits.limit}
+                    </span>
+                    <span className="text-on-surface-variant text-sm">
+                      Resets: {new Date(sync.results.rateLimits.resetTime).toLocaleTimeString()}
+                    </span>
+                    <div className="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${(sync.results.rateLimits.remaining / sync.results.rateLimits.limit) * 100}%`,
+                          backgroundColor: sync.results.rateLimits.remaining < 1000 ? '#ff9800' : '#4caf50'
                         }}
                       />
-                      {getProgressDetails().currentRepo && (
-                        <Box sx={{ mt: 1 }}>
-                          <Typography variant="body2" sx={{ mb: 1 }}>
-                            Processing: {getProgressDetails().currentRepo}
-                            {getProgressDetails().currentWorkflow && ` - ${getProgressDetails().currentWorkflow}`}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Repository {getProgressDetails().repoIndex + 1}/{getProgressDetails().totalRepos}
-                            {getProgressDetails().workflowIndex !== null && 
-                             getProgressDetails().totalWorkflows && 
-                             ` • Workflow ${getProgressDetails().workflowIndex + 1}/${getProgressDetails().totalWorkflows}`}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  )}
-
-                  {sync.results?.rateLimits && (
-                    <Box sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.1)', borderRadius: 1 }}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        GitHub API Rate Limits
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                        <Typography variant="body2">
-                          Remaining: {sync.results.rateLimits.remaining}/{sync.results.rateLimits.limit}
-                        </Typography>
-                        <Typography variant="body2">
-                          Resets: {new Date(sync.results.rateLimits.resetTime).toLocaleTimeString()}
-                        </Typography>
-                        <LinearProgress 
-                          variant="determinate" 
-                          value={(sync.results.rateLimits.remaining / sync.results.rateLimits.limit) * 100}
-                          sx={{ 
-                            width: 100,
-                            height: 8,
-                            borderRadius: 4,
-                            bgcolor: 'rgba(255, 255, 255, 0.1)',
-                            '& .MuiLinearProgress-bar': {
-                              bgcolor: sync.results.rateLimits.remaining < 1000 ? '#ff9800' : '#4caf50',
-                              borderRadius: 4
-                            }
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  )}
-                </>
+                    </div>
+                  </div>
+                </div>
               )}
+            </div>
+          )}
 
-              <Box>
-                <Typography variant="subtitle1" gutterBottom>
-                  Results Summary
-                </Typography>
-                {(() => {
-                  const summary = getResultsSummary();
-                  return (
-                    <>
-                      <Typography variant="body2" sx={{ mb: 0.5 }}>
-                        Repositories Processed: {summary.repositories}/{summary.totalRepositories}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 0.5 }}>
-                        Workflows Processed: {summary.workflows}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 0.5 }}>
-                        Runs Processed: {summary.runs}
-                      </Typography>
-                    </>
-                  );
-                })()}
-              </Box>
+          {/* Results Summary */}
+          <div>
+            <p className="text-on-surface font-medium mb-2">Results Summary</p>
+            <div className="space-y-1 text-sm">
+              <p className="text-on-surface-variant">
+                Repositories Processed: <span className="text-on-surface">{summary.repositories}/{summary.totalRepositories}</span>
+              </p>
+              <p className="text-on-surface-variant">
+                Workflows Processed: <span className="text-on-surface">{summary.workflows}</span>
+              </p>
+              <p className="text-on-surface-variant">
+                Runs Processed: <span className="text-on-surface">{summary.runs}</span>
+              </p>
+            </div>
+          </div>
 
-              {sync.results?.errors?.length > 0 && (
-                <Box>
-                  <Typography variant="subtitle1" gutterBottom color="error">
-                    Errors
-                  </Typography>
-                  {sync.results.errors.map((error, index) => (
-                    <Alert key={index} severity="error" sx={{ mb: 1 }}>
-                      {error.type}: {error.error}
-                      {error.name && ` (${error.name})`}
-                    </Alert>
-                  ))}
-                </Box>
-              )}
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={onClose}>Close</Button>
-          </DialogActions>
-        </>
-      )}
-    </Dialog>
+          {/* Errors */}
+          {sync.results?.errors?.length > 0 && (
+            <div>
+              <p className="text-error font-medium mb-2">Errors</p>
+              <div className="space-y-2">
+                {sync.results.errors.map((error, index) => (
+                  <div key={index} className="p-3 rounded-xl border bg-error/10 border-error/30 text-error text-sm">
+                    {error.type}: {error.error}
+                    {error.name && ` (${error.name})`}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end p-4 border-t border-outline-variant">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-on-surface-variant rounded-xl text-sm hover:bg-surface-container transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
