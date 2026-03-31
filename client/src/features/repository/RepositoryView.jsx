@@ -129,13 +129,48 @@ const RepositoryView = () => {
       ],
     };
 
+    // Calculate p95 duration
+    const allDurations = [];
+    Object.values(workflowStats).forEach(s => {
+      allDurations.push(...s.durations);
+    });
+    allDurations.sort((a, b) => a - b);
+    const p95Duration = allDurations.length > 0
+      ? allDurations[Math.floor(allDurations.length * 0.95)]
+      : 0;
+
+    // Calculate failure trend (last 7d vs prior 7d)
+    const now = new Date();
+    const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    const fourteenDaysAgo = new Date(now - 14 * 24 * 60 * 60 * 1000);
+    let recentFails = 0, recentTotal = 0, priorFails = 0, priorTotal = 0;
+    runs.forEach(run => {
+      const conclusion = run.run.conclusion;
+      if (conclusion === 'skipped' || conclusion === 'cancelled') return;
+      const created = new Date(run.run.created_at);
+      if (created >= sevenDaysAgo) {
+        recentTotal++;
+        if (conclusion === 'failure') recentFails++;
+      } else if (created >= fourteenDaysAgo) {
+        priorTotal++;
+        if (conclusion === 'failure') priorFails++;
+      }
+    });
+    const recentFailRate = recentTotal ? (recentFails / recentTotal * 100) : 0;
+    const priorFailRate = priorTotal ? (priorFails / priorTotal * 100) : 0;
+    // trend: 'improving' if failure rate dropped, 'worsening' if increased, 'stable' otherwise
+    const failureTrend = recentFailRate < priorFailRate - 5 ? 'improving'
+      : recentFailRate > priorFailRate + 5 ? 'worsening' : 'stable';
+
     return {
       totalRuns,
       successfulRuns,
       failedRuns,
       avgDuration: durationCount ? totalDuration / durationCount : 0,
       successRate: totalRuns ? (successfulRuns / totalRuns * 100) : 0,
-      completionRate: totalRuns ? ((successfulRuns + failedRuns) / totalRuns * 100) : 0,
+      p95Duration,
+      failureTrend,
+      recentFailRate,
       workflowStats,
       activityTrends,
       workflowComparison,
@@ -246,10 +281,11 @@ const RepositoryView = () => {
 
   // Derived stats for Workflow Stats panel
   const successRatePct = stats.successRate.toFixed(1);
-  const reliabilityPct = stats.completionRate.toFixed(1);
-  // Resource usage: avg duration as % of a 10-minute baseline (capped at 100)
-  const avgDurationMin = stats.avgDuration / (1000 * 60);
-  const resourceUsagePct = Math.min(avgDurationMin / 10 * 100, 100).toFixed(1);
+  const p95Formatted = formatDuration(stats.p95Duration);
+  const failureTrendLabel = stats.failureTrend === 'improving' ? '↓ Improving'
+    : stats.failureTrend === 'worsening' ? '↑ Worsening' : '→ Stable';
+  const failureTrendColor = stats.failureTrend === 'improving' ? 'text-secondary'
+    : stats.failureTrend === 'worsening' ? 'text-error' : 'text-outline';
 
   return (
     <div className="pb-12">
@@ -368,26 +404,26 @@ const RepositoryView = () => {
             </div>
             <div>
               <div className="flex justify-between text-[0.65rem] font-bold text-outline mb-2 uppercase">
-                <span>Reliability Index</span>
-                <span className="text-primary">{reliabilityPct}%</span>
+                <span>Failure Trend (7d)</span>
+                <span className={failureTrendColor}>{failureTrendLabel}</span>
               </div>
               <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
-                <div className="bg-primary h-full" style={{ width: `${reliabilityPct}%` }} />
+                <div className={`h-full ${stats.failureTrend === 'worsening' ? 'bg-error' : stats.failureTrend === 'improving' ? 'bg-secondary' : 'bg-primary'}`} style={{ width: `${Math.min(stats.recentFailRate, 100)}%` }} />
               </div>
             </div>
             <div>
               <div className="flex justify-between text-[0.65rem] font-bold text-outline mb-2 uppercase">
-                <span>Resource Usage</span>
-                <span className="text-tertiary">{resourceUsagePct}%</span>
+                <span>p95 Duration</span>
+                <span className="text-tertiary">{p95Formatted}</span>
               </div>
               <div className="h-2 bg-surface-container-highest rounded-full overflow-hidden">
-                <div className="bg-tertiary h-full" style={{ width: `${resourceUsagePct}%` }} />
+                <div className="bg-tertiary h-full" style={{ width: `${Math.min((stats.p95Duration / (1000 * 60 * 10)) * 100, 100)}%` }} />
               </div>
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-outline-variant/10">
             <p className="text-[0.65rem] text-outline leading-relaxed italic">
-              "{successRatePct}% of runs completed successfully across {Object.keys(stats.workflowStats).length} active workflows."
+              "{successRatePct}% success rate across {Object.keys(stats.workflowStats).length} workflows. p95 duration is {p95Formatted}. Failure trend: {failureTrendLabel.toLowerCase()}."
             </p>
           </div>
         </div>
