@@ -58,14 +58,6 @@ const Layout = ({ children }) => {
       {/* Top Header */}
       <header className="fixed top-0 right-0 left-[240px] h-16 bg-[#10141a]/80 backdrop-blur-xl flex items-center justify-between px-8 z-50 text-sm font-medium tracking-normal">
         <div className="flex items-center gap-6">
-          <div className="relative group">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]">search</span>
-            <input
-              className="bg-surface-container-highest border-none rounded-lg pl-10 pr-4 py-1.5 w-64 text-xs focus:ring-1 focus:ring-primary/40 focus:bg-surface-bright transition-all outline-none text-on-surface"
-              placeholder="Search repositories..."
-              type="text"
-            />
-          </div>
         </div>
         <div className="flex items-center gap-4">
           <button className="p-2 text-[#dfe2eb]/60 hover:text-primary transition-colors">
