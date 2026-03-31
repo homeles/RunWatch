@@ -1,71 +1,15 @@
 import React from 'react';
-import { Chip, keyframes } from '@mui/material';
-import {
-  PlayCircle as QueuedIcon,
-  RotateRight as InProgressIcon,
-  CheckCircle as SuccessIcon,
-  Cancel as FailureIcon,
-  Warning as WarningIcon,
-} from '@mui/icons-material';
-
-const rotate = keyframes`
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-`;
-
-const pulse = keyframes`
-  0% { opacity: 1; }
-  50% { opacity: 0.6; }
-  100% { opacity: 1; }
-`;
 
 const StatusChip = ({ status, conclusion }) => {
-  const commonStyles = {
-    height: '24px',
-    '& .MuiChip-label': {
-      px: 1.5,
-      py: 0.5,
-      fontWeight: 500,
-      fontSize: '0.75rem',
-      lineHeight: 1
-    },
-    '& .MuiChip-icon': {
-      ml: 0.5,
-      fontSize: '1rem'
-    }
-  };
-
-  // Handle active states first
   if (['in_progress', 'queued', 'waiting', 'pending', 'requested'].includes(status)) {
-    const label = status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    const icon = status === 'in_progress' ? <InProgressIcon /> :
-                 status === 'queued' ? <QueuedIcon /> : 
-                 <WarningIcon />;
-
+    const label = status.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const isInProgress = status === 'in_progress';
+    const icon = isInProgress ? 'sync' : status === 'queued' ? 'play_circle' : 'schedule';
     return (
-      <Chip 
-        icon={icon}
-        label={label}
-        size="small"
-        sx={{
-          ...commonStyles,
-          bgcolor: 'rgba(245, 159, 0, 0.15)',
-          color: '#F5A623',
-          border: '1px solid rgba(245, 159, 0, 0.2)',
-          '& .MuiChip-icon': {
-            color: '#F5A623',
-            ...(status === 'in_progress' && {
-              animation: `${rotate} 2s linear infinite`
-            })
-          },
-          '& .MuiChip-label': {
-            ...commonStyles['& .MuiChip-label'],
-            ...(status === 'in_progress' && {
-              animation: `${pulse} 2s ease-in-out infinite`
-            })
-          }
-        }}
-      />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[rgba(245,159,0,0.15)] text-[#F5A623] border border-[rgba(245,159,0,0.2)]">
+        <span className={`material-symbols-outlined text-base leading-none ${isInProgress ? 'animate-spin' : ''}`}>{icon}</span>
+        <span className={isInProgress ? 'animate-pulse' : ''}>{label}</span>
+      </span>
     );
   }
 
@@ -73,102 +17,47 @@ const StatusChip = ({ status, conclusion }) => {
     switch (conclusion) {
       case 'success':
         return (
-          <Chip 
-            icon={<SuccessIcon />} 
-            label="Success" 
-            size="small"
-            sx={{
-              ...commonStyles,
-              bgcolor: 'rgba(35, 197, 98, 0.15)',
-              color: '#23C562',
-              border: '1px solid rgba(35, 197, 98, 0.2)',
-              '& .MuiChip-icon': {
-                color: '#23C562'
-              }
-            }}
-          />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-secondary/15 text-secondary border border-secondary/20">
+            <span className="material-symbols-outlined text-base leading-none">check_circle</span>
+            Success
+          </span>
         );
       case 'failure':
         return (
-          <Chip 
-            icon={<FailureIcon />} 
-            label="Failed" 
-            size="small"
-            sx={{
-              ...commonStyles,
-              bgcolor: 'rgba(248, 81, 73, 0.15)',
-              color: '#F85149',
-              border: '1px solid rgba(248, 81, 73, 0.2)',
-              '& .MuiChip-icon': {
-                color: '#F85149'
-              }
-            }}
-          />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-error/15 text-error border border-error/20">
+            <span className="material-symbols-outlined text-base leading-none">cancel</span>
+            Failed
+          </span>
         );
       case 'cancelled':
       case 'skipped':
         return (
-          <Chip 
-            icon={<WarningIcon />} 
-            label={conclusion === 'cancelled' ? 'Cancelled' : 'Skipped'} 
-            size="small"
-            sx={{
-              ...commonStyles,
-              bgcolor: 'rgba(139, 148, 158, 0.15)',
-              color: '#8B949E',
-              border: '1px solid rgba(139, 148, 158, 0.2)',
-              '& .MuiChip-icon': {
-                color: '#8B949E'
-              }
-            }}
-          />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-outline/15 text-outline border border-outline/20">
+            <span className="material-symbols-outlined text-base leading-none">block</span>
+            {conclusion === 'cancelled' ? 'Cancelled' : 'Skipped'}
+          </span>
         );
       case 'timed_out':
       case 'action_required':
         return (
-          <Chip 
-            icon={<WarningIcon />} 
-            label={conclusion === 'timed_out' ? 'Timed Out' : 'Action Required'} 
-            size="small"
-            sx={{
-              ...commonStyles,
-              bgcolor: 'rgba(245, 159, 0, 0.15)',
-              color: '#F5A623',
-              border: '1px solid rgba(245, 159, 0, 0.2)',
-              '& .MuiChip-icon': {
-                color: '#F5A623'
-              }
-            }}
-          />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[rgba(245,159,0,0.15)] text-[#F5A623] border border-[rgba(245,159,0,0.2)]">
+            <span className="material-symbols-outlined text-base leading-none">warning</span>
+            {conclusion === 'timed_out' ? 'Timed Out' : 'Action Required'}
+          </span>
         );
       default:
         return (
-          <Chip 
-            label={conclusion || 'Unknown'} 
-            size="small"
-            sx={{
-              ...commonStyles,
-              bgcolor: 'rgba(139, 148, 158, 0.15)',
-              color: '#8B949E',
-              border: '1px solid rgba(139, 148, 158, 0.2)'
-            }}
-          />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-outline/15 text-outline border border-outline/20">
+            {conclusion || 'Unknown'}
+          </span>
         );
     }
   }
 
-  // Default case for any other status
   return (
-    <Chip 
-      label={status || 'Pending'}
-      size="small"
-      sx={{
-        ...commonStyles,
-        bgcolor: 'rgba(139, 148, 158, 0.15)',
-        color: '#8B949E',
-        border: '1px solid rgba(139, 148, 158, 0.2)'
-      }}
-    />
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-outline/15 text-outline border border-outline/20">
+      {status || 'Pending'}
+    </span>
   );
 };
 
