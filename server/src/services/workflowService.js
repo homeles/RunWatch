@@ -142,7 +142,7 @@ export const calculateWorkflowStats = async () => {
       inProgressRuns,
       recentRuns
     ] = await Promise.all([
-      WorkflowRun.countDocuments(),
+      WorkflowRun.countDocuments({ 'run.conclusion': { $nin: ['skipped', 'cancelled'] } }),
       WorkflowRun.countDocuments({ 'run.conclusion': 'success' }),
       WorkflowRun.countDocuments({ 'run.conclusion': 'failure' }),
       WorkflowRun.countDocuments({ 'run.status': 'in_progress' }),
@@ -153,8 +153,13 @@ export const calculateWorkflowStats = async () => {
         .select('repository workflow run')
     ]);
 
-    // Get repository-specific stats
+    // Get repository-specific stats (exclude skipped and cancelled from totals)
     const repoStats = await WorkflowRun.aggregate([
+      {
+        $match: {
+          'run.conclusion': { $nin: ['skipped', 'cancelled'] }
+        }
+      },
       {
         $group: {
           _id: '$repository.fullName',

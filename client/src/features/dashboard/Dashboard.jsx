@@ -41,7 +41,7 @@ const getRepoBorderColor = (repoData) => {
   let success = 0;
   Object.values(repoData.workflows).forEach((wf) => {
     wf.runs.forEach((r) => {
-      if (r.run.status === 'completed') {
+      if (r.run.status === 'completed' && r.run.conclusion !== 'skipped' && r.run.conclusion !== 'cancelled') {
         total++;
         if (r.run.conclusion === 'success') success++;
       }

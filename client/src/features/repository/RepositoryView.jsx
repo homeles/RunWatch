@@ -53,11 +53,22 @@ const RepositoryView = () => {
       }
 
       const s = workflowStats[workflowName];
+
+      // Skip 'skipped' and 'cancelled' runs from stats — they aren't real failures
+      const conclusion = run.run.conclusion;
+      if (conclusion === 'skipped' || conclusion === 'cancelled') {
+        // Still track last run date but don't count in success/failure stats
+        if (!s.lastRun || new Date(run.run.created_at) > new Date(s.lastRun)) {
+          s.lastRun = run.run.created_at;
+        }
+        return;
+      }
+
       s.total++;
       totalRuns++;
 
-      if (run.run.conclusion === 'success') { s.successful++; successfulRuns++; }
-      if (run.run.conclusion === 'failure') { s.failed++; failedRuns++; }
+      if (conclusion === 'success') { s.successful++; successfulRuns++; }
+      if (conclusion === 'failure') { s.failed++; failedRuns++; }
 
       const start = new Date(run.run.created_at);
       const end = new Date(run.run.updated_at);

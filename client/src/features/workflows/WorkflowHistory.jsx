@@ -20,7 +20,7 @@ const WorkflowHistory = () => {
   const calculateStats = (runs) => {
     if (!runs.length) return null;
 
-    const completedRuns = runs.filter(run => run.run?.status === 'completed');
+    const completedRuns = runs.filter(run => run.run?.status === 'completed' && run.run?.conclusion !== 'skipped' && run.run?.conclusion !== 'cancelled');
     const successfulRuns = runs.filter(run => run.run?.conclusion === 'success');
     const failedRuns = runs.filter(run => run.run?.conclusion === 'failure');
 
