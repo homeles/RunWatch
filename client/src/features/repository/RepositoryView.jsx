@@ -488,47 +488,6 @@ const RepositoryView = () => {
           })}
         </div>
       </section>
-
-      {/* Footer */}
-      <section className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 md:col-span-2 flex items-center justify-between">
-          <div>
-            <h4 className="text-sm font-bold uppercase tracking-widest text-outline mb-1">Queue Health</h4>
-            <p className="text-2xl font-bold text-on-surface">
-              Stable <span className="text-secondary text-sm font-medium ml-2">(-1.2s latency)</span>
-            </p>
-            <div className="mt-4 flex gap-1">
-              {[40, 60, 30, 70, 50, 80, 100, 60, 40, 90].map((opacity, i) => (
-                <div
-                  key={i}
-                  className={`w-4 h-8 rounded-sm ${i === 6 ? 'bg-primary' : 'bg-secondary'}`}
-                  style={{ opacity: opacity / 100 }}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-[0.65rem] font-bold text-outline-variant uppercase mb-2">Next Scheduled Run</p>
-            <p className="text-lg font-mono text-on-surface">04:00 UTC</p>
-            <p className="text-xs text-outline mt-1">Daily Automated Suite</p>
-          </div>
-        </div>
-        <div className="bg-surface-container p-6 rounded-xl border border-outline-variant/10 flex flex-col justify-center items-center text-center">
-          <span
-            className="material-symbols-outlined text-4xl text-primary mb-2"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            analytics
-          </span>
-          <h4 className="text-sm font-bold text-on-surface uppercase tracking-widest">Full Report</h4>
-          <p className="text-xs text-outline mt-1 mb-4 px-4">
-            Download comprehensive PDF analysis of this repository's CI velocity.
-          </p>
-          <button className="w-full py-2 bg-surface-container-high hover:bg-surface-bright rounded text-[0.65rem] font-bold uppercase tracking-wider transition-all">
-            Download .PDF
-          </button>
-        </div>
-      </section>
     </div>
   );
 };
