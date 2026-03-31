@@ -45,11 +45,11 @@ This epic covers the complete UI redesign of RunWatch V3, replacing the current 
 
 **Redesign Preview:**
 
-![Dashboard - 5-Column Grid & Collapsible Workflows](https://raw.githubusercontent.com/homeles/RunWatch/docs/redesign-screenshots/docs/redesign-screenshots/01-dashboard-5col.png)
+![Dashboard - 5-Column Grid & Collapsible Workflows](./images/01-dashboard-5col.png)
 
 <details><summary>📸 Dashboard — Hover Status Details variant</summary>
 
-![Dashboard - Hover Details](https://raw.githubusercontent.com/homeles/RunWatch/docs/redesign-screenshots/docs/redesign-screenshots/02-dashboard-hover.png)
+![Dashboard - Hover Details](./images/02-dashboard-hover.png)
 
 </details>
 
@@ -84,7 +84,7 @@ This epic covers the complete UI redesign of RunWatch V3, replacing the current 
 
 **Redesign Preview:**
 
-![Repository Detail - hom-bank/arc-perf-test](https://raw.githubusercontent.com/homeles/RunWatch/docs/redesign-screenshots/docs/redesign-screenshots/03-repo-detail.png)
+![Repository Detail - hom-bank/arc-perf-test](./images/03-repo-detail.png)
 
 **Current state:** MUI cards showing repo overview, workflow stats table, Chart.js line/bar charts for duration trends and success rates.
 
@@ -118,7 +118,7 @@ This epic covers the complete UI redesign of RunWatch V3, replacing the current 
 
 **Redesign Preview:**
 
-![Workflow Detail - 10 Recent Runs](https://raw.githubusercontent.com/homeles/RunWatch/docs/redesign-screenshots/docs/redesign-screenshots/04-workflow-detail.png)
+![Workflow Detail - 10 Recent Runs](./images/04-workflow-detail.png)
 
 **Current state:** MUI table with run history rows, Chart.js line chart for duration trends, stats cards (success rate, avg duration, total runs).
 
@@ -152,7 +152,7 @@ This epic covers the complete UI redesign of RunWatch V3, replacing the current 
 
 **Redesign Preview:**
 
-![Workflow Run Detail - Run #51 with Timeline](https://raw.githubusercontent.com/homeles/RunWatch/docs/redesign-screenshots/docs/redesign-screenshots/05-run-detail-success.png)
+![Workflow Run Detail - Run #51 with Timeline](./images/05-run-detail-success.png)
 
 **Current state:** MUI paper showing run metadata, collapsible job list with step details, status chips.
 
@@ -184,7 +184,7 @@ This epic covers the complete UI redesign of RunWatch V3, replacing the current 
 
 **Redesign Preview:**
 
-![Workflow Run Detail - Failed](https://raw.githubusercontent.com/homeles/RunWatch/docs/redesign-screenshots/docs/redesign-screenshots/06-run-detail-failed.png)
+![Workflow Run Detail - Failed](./images/06-run-detail-failed.png)
 
 **Current state:** Same `WorkflowDetails.jsx` — no visual differentiation for failed runs beyond status chip color.
 
@@ -211,7 +211,7 @@ This epic covers the complete UI redesign of RunWatch V3, replacing the current 
 
 **Redesign Preview:**
 
-![RunWatch Pro Statistics Overview](https://raw.githubusercontent.com/homeles/RunWatch/docs/redesign-screenshots/docs/redesign-screenshots/07-statistics.png)
+![RunWatch Pro Statistics Overview](./images/07-statistics.png)
 
 **Current state:** MUI cards with Chart.js bar/pie/line charts showing org-level success rates, run distribution, duration trends.
 
@@ -248,7 +248,7 @@ This epic covers the complete UI redesign of RunWatch V3, replacing the current 
 
 **Redesign Preview:**
 
-![RunWatch Settings - Functional Update](https://raw.githubusercontent.com/homeles/RunWatch/docs/redesign-screenshots/docs/redesign-screenshots/08-settings.png)
+![RunWatch Settings - Functional Update](./images/08-settings.png)
 
 **Current state:** MUI form with org selector, sync button, progress bar, sync history list, max workflow runs setting, DB backup/restore.
 
@@ -309,7 +309,7 @@ This epic covers the complete UI redesign of RunWatch V3, replacing the current 
 
 **Redesign Preview:**
 
-<img src="https://raw.githubusercontent.com/homeles/RunWatch/docs/redesign-screenshots/docs/redesign-screenshots/09-mobile-dashboard.png" width="390" alt="Mobile Dashboard" />
+<img src="./images/09-mobile-dashboard.png" width="390" alt="Mobile Dashboard" />
 
 **Current state:** MUI responsive grid collapses to single column on mobile, drawer becomes hamburger menu.
 
