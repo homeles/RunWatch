@@ -434,32 +434,66 @@ const RunnersView = () => {
     <div className="pb-6">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-3 border-b border-outline-variant/10">
-        {/* Search */}
-        <div className="relative">
-          <span
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined leading-none"
-            style={{ fontSize: '16px' }}
+        {/* Left: Search + Cache info + Refresh */}
+        <div className="flex items-center gap-3">
+          {/* Search */}
+          <div className="relative">
+            <span
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined leading-none"
+              style={{ fontSize: '16px' }}
+            >
+              search
+            </span>
+            <input
+              type="text"
+              placeholder="Search runners..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-surface-container-highest rounded-lg pl-9 pr-8 py-1.5 w-56 text-xs text-on-surface border-none outline-none focus:ring-1 focus:ring-primary/40"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface material-symbols-outlined leading-none"
+                style={{ fontSize: '14px' }}
+              >
+                close
+              </button>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="h-5 w-px bg-outline-variant/20" />
+
+          {/* Cache info + Force refresh */}
+          {cacheInfo && cacheInfo.cachedAt && (
+            <span className="text-[10px] text-on-surface-variant/40" title={`Cache TTL: ${Math.round(cacheInfo.ttlMs / 1000)}s`}>
+              {cacheInfo.ageMs != null
+                ? `Cached ${Math.round(cacheInfo.ageMs / 1000)}s ago`
+                : 'Fresh'}
+            </span>
+          )}
+          <button
+            onClick={handleForceRefresh}
+            disabled={refreshing}
+            title="Force refresh (bypass cache)"
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              refreshing
+                ? 'bg-primary/10 text-primary'
+                : 'bg-surface-container-highest text-on-surface-variant hover:text-primary hover:bg-primary/10'
+            }`}
           >
-            search
-          </span>
-          <input
-            type="text"
-            placeholder="Search runners..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-surface-container-highest rounded-lg pl-9 pr-8 py-1.5 w-56 text-xs text-on-surface border-none outline-none focus:ring-1 focus:ring-primary/40"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface material-symbols-outlined leading-none"
+            <span
+              className={`material-symbols-outlined leading-none ${refreshing ? 'animate-spin' : ''}`}
               style={{ fontSize: '14px' }}
             >
-              close
-            </button>
-          )}
+              refresh
+            </span>
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
 
+        {/* Right: Filters */}
         <div className="flex items-center gap-3">
           {/* Status filter */}
           <select
@@ -492,30 +526,6 @@ const RunnersView = () => {
                 close
               </button>
             )}
-          </div>
-
-          {/* Cache info + refresh */}
-          <div className="flex items-center gap-2">
-            {cacheInfo && cacheInfo.cachedAt && (
-              <span className="text-[10px] text-on-surface-variant/40" title={`Cache TTL: ${Math.round(cacheInfo.ttlMs / 1000)}s`}>
-                {cacheInfo.ageMs != null
-                  ? `Cached ${Math.round(cacheInfo.ageMs / 1000)}s ago`
-                  : 'Fresh'}
-              </span>
-            )}
-            <button
-              onClick={handleForceRefresh}
-              disabled={refreshing}
-              title="Force refresh (bypass cache)"
-              className={`p-1.5 material-symbols-outlined transition-colors leading-none ${
-                refreshing
-                  ? 'text-primary animate-spin'
-                  : 'text-on-surface-variant hover:text-primary'
-              }`}
-              style={{ fontSize: '18px' }}
-            >
-              refresh
-            </button>
           </div>
         </div>
       </div>
