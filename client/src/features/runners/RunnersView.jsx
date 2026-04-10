@@ -52,8 +52,9 @@ const RunnerCard = ({ runner, onLabelClick, onStatusClick }) => {
           {runner.name}
         </span>
         {runner.scope === 'repo' && (
-          <span className="flex-shrink-0 px-1.5 py-0 rounded bg-tertiary/15 border border-tertiary/20 text-[8px] font-bold uppercase tracking-wider text-tertiary/80" title={`Repo: ${runner.owner}/${runner.repo}`}>
-            repo
+          <span className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0 rounded bg-tertiary/15 border border-tertiary/20 text-[9px] font-medium text-tertiary/80">
+            <span className="material-symbols-outlined leading-none" style={{ fontSize: '10px' }}>source</span>
+            {runner.repo}
           </span>
         )}
       </div>
