@@ -48,17 +48,27 @@ export const checkRunnersStatus = async (req, res) => {
       return successResponse(res, result, 'Runner permission status');
     }
 
+    console.log(`runnerController.checkRunnersStatus: probing installation ${installation.id} (${account.login}, type=${account.type})`);
+
     if (account.type === 'Organization') {
       await client.rest.actions.listSelfHostedRunnersForOrg({ org: account.login, per_page: 1 });
     } else {
+      // For user-level installations, try repo-level runners API
       const { data: reposData } = await client.rest.apps.listReposAccessibleToInstallation({ per_page: 1 });
       if (reposData.repositories && reposData.repositories.length > 0) {
         const repo = reposData.repositories[0];
+        console.log(`runnerController.checkRunnersStatus: probing repo ${repo.full_name}`);
         await client.rest.actions.listSelfHostedRunnersForRepo({
           owner: repo.owner.login,
           repo: repo.name,
           per_page: 1,
         });
+      } else {
+        console.log('runnerController.checkRunnersStatus: no accessible repos found for installation');
+        const result = { available: false, reason: 'No accessible repositories found for this installation' };
+        permissionCache.result = result;
+        permissionCache.fetchedAt = Date.now();
+        return successResponse(res, result, 'Runner permission status');
       }
     }
 
@@ -67,13 +77,14 @@ export const checkRunnersStatus = async (req, res) => {
     permissionCache.fetchedAt = Date.now();
     return successResponse(res, result, 'Runner permission status');
   } catch (err) {
+    console.error(`runnerController.checkRunnersStatus: probe failed — status=${err.status}, message=${err.message}`);
     let result;
     if (err.status === 403) {
       result = { available: false, reason: 'GitHub App lacks Self-hosted runners (Read) permission' };
     } else if (err.status === 404) {
       result = { available: false, reason: 'Runners API not accessible for this installation' };
     } else {
-      result = { available: false, reason: 'Unable to verify runner permissions' };
+      result = { available: false, reason: `Unable to verify runner permissions: ${err.message}` };
     }
     permissionCache.result = result;
     permissionCache.fetchedAt = Date.now();
