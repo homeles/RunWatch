@@ -51,10 +51,25 @@ const RunnerCard = ({ runner, onLabelClick, onStatusClick }) => {
         <span className="font-semibold text-xs text-on-surface truncate" title={runner.name}>
           {runner.name}
         </span>
-        {runner.scope === 'repo' && (
-          <span className="flex-shrink-0 flex items-center gap-1 px-1.5 py-0 rounded bg-tertiary/15 border border-tertiary/20 text-[9px] font-medium text-tertiary/80">
+        {runner.scope === 'repo' && runner.repo && (
+          <span className="flex-shrink-0 flex items-center gap-1.5 px-1.5 py-0 rounded bg-tertiary/15 border border-tertiary/20 text-[9px] font-medium text-tertiary/80">
             <span className="material-symbols-outlined leading-none" style={{ fontSize: '10px' }}>source</span>
-            {runner.repo}
+            <a
+              href={`/repository/${runner.owner}/${runner.repo}`}
+              className="hover:text-tertiary hover:underline transition-colors"
+              title="View in RunWatch"
+            >
+              {runner.repo}
+            </a>
+            <a
+              href={`https://github.com/${runner.owner}/${runner.repo}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-tertiary transition-colors"
+              title="View on GitHub"
+            >
+              <span className="material-symbols-outlined leading-none" style={{ fontSize: '10px' }}>open_in_new</span>
+            </a>
           </span>
         )}
       </div>
