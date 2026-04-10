@@ -42,12 +42,19 @@ export const getAllRunners = async () => {
     // Org-level runners
     if (account.type === 'Organization') {
       try {
+        // Fetch runner groups first to map group IDs to names
+        const groupMap = await fetchRunnerGroupMap(client, account.login);
+
         const { data } = await client.rest.actions.listSelfHostedRunnersForOrg({
           org: account.login,
           per_page: 100,
         });
         for (const runner of data.runners) {
-          runners.push(normalizeRunner(runner, { scope: 'org', owner: account.login }));
+          runners.push(normalizeRunner(runner, {
+            scope: 'org',
+            owner: account.login,
+            groupMap,
+          }));
         }
       } catch (err) {
         console.error(
@@ -143,21 +150,53 @@ export const invalidateCache = () => {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
+ * Fetch org-level runner groups and return a Map of groupId → groupName.
+ * Gracefully returns an empty map if the API call fails (e.g. missing permission).
+ */
+const fetchRunnerGroupMap = async (client, org) => {
+  const map = new Map();
+  try {
+    const { data } = await client.rest.actions.listSelfHostedRunnerGroupsForOrg({
+      org,
+      per_page: 100,
+    });
+    for (const group of data.runner_groups) {
+      map.set(group.id, group.name);
+    }
+  } catch (err) {
+    console.error(`runnerService: failed to fetch runner groups for ${org}:`, err.message);
+  }
+  return map;
+};
+
+/**
  * Normalise a raw GitHub runner object into the shape our API returns.
  */
-const normalizeRunner = (runner, context) => ({
-  id: runner.id,
-  name: runner.name,
-  // GitHub reports "online" / "offline"; busy is derived from busy flag
-  status: deriveStatus(runner),
-  os: runner.os ?? null,
-  labels: (runner.labels ?? []).map((l) => l.name),
-  runnerGroup: runner.runner_group_name ?? null,
-  busy: runner.busy ?? false,
-  scope: context.scope,
-  owner: context.owner,
-  repo: context.repo ?? null,
-});
+const normalizeRunner = (runner, context) => {
+  // Resolve runner group name: use the groupMap (from org-level fetch) if available,
+  // fall back to runner_group_name if the API ever includes it.
+  let groupName = null;
+  if (context.groupMap && runner.runner_group_id) {
+    groupName = context.groupMap.get(runner.runner_group_id) ?? null;
+  }
+  if (!groupName && runner.runner_group_name) {
+    groupName = runner.runner_group_name;
+  }
+
+  return {
+    id: runner.id,
+    name: runner.name,
+    status: deriveStatus(runner),
+    os: runner.os ?? null,
+    labels: (runner.labels ?? []).map((l) => l.name),
+    runnerGroup: groupName,
+    runnerGroupId: runner.runner_group_id ?? null,
+    busy: runner.busy ?? false,
+    scope: context.scope,
+    owner: context.owner,
+    repo: context.repo ?? null,
+  };
+};
 
 /**
  * Map GitHub's status + busy flag to one of: online | busy | idle | offline
