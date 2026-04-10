@@ -59,7 +59,8 @@ export const getAllRunners = async () => {
 
 /**
  * Fetch runners for a single installation.
- * For orgs: fetch runner groups, then runners per group (skips repo-level).
+ * For orgs: fetch all runners (with busy status), then fetch runner groups
+ * to map group IDs to names, and merge the info.
  * For user accounts: fetch repo-level runners.
  */
 const fetchInstallationRunners = async (installation) => {
@@ -80,39 +81,37 @@ const fetchInstallationRunners = async (installation) => {
   const account = installation.account;
 
   if (account.type === 'Organization') {
-    // Org-level: fetch runner groups, then runners per group
     try {
-      const groupMap = await fetchRunnerGroupMap(client, account.login);
-
-      if (groupMap.size > 0) {
-        // Fetch runners per group in parallel
-        const groupResults = await Promise.allSettled(
-          [...groupMap.entries()].map(async ([groupId, groupName]) => {
-            const { data } = await client.request('GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners', {
-              org: account.login,
-              runner_group_id: groupId,
-              per_page: 100,
-            });
-            return data.runners.map((runner) =>
-              normalizeRunner(runner, { scope: 'org', owner: account.login, groupName })
-            );
-          })
-        );
-
-        for (const result of groupResults) {
-          if (result.status === 'fulfilled') {
-            runners.push(...result.value);
-          }
-        }
-      } else {
-        // Fallback: fetch all runners if group fetch failed
-        const { data } = await client.rest.actions.listSelfHostedRunnersForOrg({
+      // Fetch all runners AND runner groups in parallel
+      const [runnersResult, groupMapResult] = await Promise.allSettled([
+        client.rest.actions.listSelfHostedRunnersForOrg({
           org: account.login,
           per_page: 100,
-        });
-        for (const runner of data.runners) {
-          runners.push(normalizeRunner(runner, { scope: 'org', owner: account.login }));
+        }),
+        fetchRunnerGroupMap(client, account.login),
+      ]);
+
+      const groupMap = groupMapResult.status === 'fulfilled' ? groupMapResult.value : new Map();
+
+      if (runnersResult.status === 'fulfilled') {
+        for (const runner of runnersResult.value.data.runners) {
+          // Look up group name from the groupMap using runner_group_id
+          let groupName = null;
+          if (runner.runner_group_id && groupMap.size > 0) {
+            groupName = groupMap.get(runner.runner_group_id) ?? null;
+          }
+
+          runners.push(normalizeRunner(runner, {
+            scope: 'org',
+            owner: account.login,
+            groupName,
+          }));
         }
+      } else {
+        console.error(
+          `runnerService: failed to list org runners for ${account.login}:`,
+          runnersResult.reason?.message
+        );
       }
     } catch (err) {
       console.error(
