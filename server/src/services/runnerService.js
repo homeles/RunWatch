@@ -156,8 +156,11 @@ const fetchInstallationRunners = async (installation) => {
       });
 
       if (reposData.repositories && reposData.repositories.length > 0) {
-        // Track org runner IDs to avoid duplicates
-        const orgRunnerIds = new Set(runners.map((r) => r.id));
+        // Track org runner IDs to avoid true duplicates
+        // Use composite key (id + scope + repo) since the same physical
+        // machine can be registered as both an org runner and a repo runner
+        // with different names/configs (same runner ID)
+        const orgRunnerKeys = new Set(runners.map((r) => `${r.id}:${r.scope}:${r.repo || ''}`));
 
         const repoResults = await Promise.allSettled(
           reposData.repositories.map(async (repo) => {
@@ -166,9 +169,9 @@ const fetchInstallationRunners = async (installation) => {
               repo: repo.name,
               per_page: 100,
             });
-            // Only return runners we haven't already seen at org level
+            // Only return runners we haven't already seen with the same scope
             const newRunners = runnerData.runners
-              .filter((r) => !orgRunnerIds.has(r.id));
+              .filter((r) => !orgRunnerKeys.has(`${r.id}:repo:${repo.name}`));
             if (newRunners.length > 0) {
               console.log(`runnerService: found ${newRunners.length} repo-level runner(s) in ${repo.full_name}`);
             }
