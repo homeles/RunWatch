@@ -46,10 +46,17 @@ const RunnerCard = ({ runner, onLabelClick, onStatusClick }) => {
         {osIcon(runner.os)}
       </span>
 
-      {/* Name */}
-      <span className="font-semibold text-xs text-on-surface truncate min-w-[120px] max-w-[180px]" title={runner.name}>
-        {runner.name}
-      </span>
+      {/* Name + scope badge */}
+      <div className="flex items-center gap-1.5 min-w-[120px] max-w-[220px]">
+        <span className="font-semibold text-xs text-on-surface truncate" title={runner.name}>
+          {runner.name}
+        </span>
+        {runner.scope === 'repo' && (
+          <span className="flex-shrink-0 px-1.5 py-0 rounded bg-tertiary/15 border border-tertiary/20 text-[8px] font-bold uppercase tracking-wider text-tertiary/80" title={`Repo: ${runner.owner}/${runner.repo}`}>
+            repo
+          </span>
+        )}
+      </div>
 
       {/* Status */}
       <button
