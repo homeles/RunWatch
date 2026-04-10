@@ -167,19 +167,27 @@ const fetchInstallationRunners = async (installation) => {
               per_page: 100,
             });
             // Only return runners we haven't already seen at org level
-            return runnerData.runners
-              .filter((r) => !orgRunnerIds.has(r.id))
-              .map((runner) =>
-                normalizeRunner(runner, { scope: 'repo', owner: repo.owner.login, repo: repo.name })
-              );
+            const newRunners = runnerData.runners
+              .filter((r) => !orgRunnerIds.has(r.id));
+            if (newRunners.length > 0) {
+              console.log(`runnerService: found ${newRunners.length} repo-level runner(s) in ${repo.full_name}`);
+            }
+            return newRunners.map((runner) =>
+              normalizeRunner(runner, { scope: 'repo', owner: repo.owner.login, repo: repo.name })
+            );
           })
         );
 
+        let repoRunnerCount = 0;
         for (const result of repoResults) {
           if (result.status === 'fulfilled') {
             runners.push(...result.value);
+            repoRunnerCount += result.value.length;
           }
           // Silently skip 403/404 (most repos won't have repo-level runners)
+        }
+        if (repoRunnerCount > 0) {
+          console.log(`runnerService: added ${repoRunnerCount} repo-level runner(s) for ${account.login}`);
         }
       }
     } catch (err) {
