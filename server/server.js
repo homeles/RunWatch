@@ -47,7 +47,7 @@ if (isProduction && !process.env.CLIENT_URL) {
   throw new Error('CORS configuration error: CLIENT_URL must be set in production.');
 }
 const allowedOrigins = [
-  ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ['http://localhost']),
+  ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map(u => u.trim()) : ['http://localhost']),
   ...(!isProduction ? ['http://localhost:3000'] : [])
 ];
 app.use(cors({

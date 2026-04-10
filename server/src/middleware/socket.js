@@ -11,7 +11,7 @@ const setupSocket = (server) => {
   // Mirror the Express CORS allowlist: localhost:3000 only in non-production.
   // Originless connections (server-to-server / CLI clients) are allowed, matching Express CORS behaviour.
   const allowedOrigins = [
-    ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL] : ['http://localhost']),
+    ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map(u => u.trim()) : ['http://localhost']),
     ...(!isProduction ? ['http://localhost:3000'] : [])
   ];
 
