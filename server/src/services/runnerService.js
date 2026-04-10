@@ -147,8 +147,47 @@ const fetchInstallationRunners = async (installation) => {
         err.message
       );
     }
-    // Skip repo-level fetching for orgs — org runners are already visible
-    // to all repos, and repo-level calls mostly return 403.
+
+    // Also fetch repo-level runners (repos can have their own runners
+    // in addition to org-shared ones). Runs in parallel, skips 403s.
+    try {
+      const { data: reposData } = await client.rest.apps.listReposAccessibleToInstallation({
+        per_page: 100,
+      });
+
+      if (reposData.repositories && reposData.repositories.length > 0) {
+        // Track org runner IDs to avoid duplicates
+        const orgRunnerIds = new Set(runners.map((r) => r.id));
+
+        const repoResults = await Promise.allSettled(
+          reposData.repositories.map(async (repo) => {
+            const { data: runnerData } = await client.rest.actions.listSelfHostedRunnersForRepo({
+              owner: repo.owner.login,
+              repo: repo.name,
+              per_page: 100,
+            });
+            // Only return runners we haven't already seen at org level
+            return runnerData.runners
+              .filter((r) => !orgRunnerIds.has(r.id))
+              .map((runner) =>
+                normalizeRunner(runner, { scope: 'repo', owner: repo.owner.login, repo: repo.name })
+              );
+          })
+        );
+
+        for (const result of repoResults) {
+          if (result.status === 'fulfilled') {
+            runners.push(...result.value);
+          }
+          // Silently skip 403/404 (most repos won't have repo-level runners)
+        }
+      }
+    } catch (err) {
+      console.error(
+        `runnerService: failed to list repos for ${account.login}:`,
+        err.message
+      );
+    }
   } else {
     // User-level: fetch repo-level runners
     try {
