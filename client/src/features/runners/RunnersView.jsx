@@ -277,6 +277,7 @@ const OrgSection = ({ orgName, runners, onLabelClick, onStatusClick }) => {
 const RunnersView = () => {
   const [runners, setRunners] = useState([]);
   const [summary, setSummary] = useState({ total: 0, online: 0, busy: 0, offline: 0 });
+  const [totalSummary, setTotalSummary] = useState({ total: 0, online: 0, busy: 0, offline: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -290,12 +291,14 @@ const RunnersView = () => {
   const fetchRunners = async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
-      const filters = {};
-      if (statusFilter !== 'all') filters.status = statusFilter;
-
-      const data = await apiService.getRunners(filters);
-      setRunners(data.runners ?? []);
-      setSummary(data.summary ?? { total: 0, online: 0, busy: 0, offline: 0 });
+      // Always fetch ALL runners (no status filter on server)
+      // so we can compute accurate total counts
+      const data = await apiService.getRunners({});
+      const allRunners = data.runners ?? [];
+      const allSummary = data.summary ?? { total: 0, online: 0, busy: 0, offline: 0 };
+      setTotalSummary(allSummary);
+      setRunners(allRunners);
+      setSummary(allSummary);
       setCacheInfo(data.cache ?? null);
       setError(null);
     } catch (err) {
@@ -330,11 +333,15 @@ const RunnersView = () => {
     fetchRunners(true); // Show spinner only on initial load
     intervalRef.current = setInterval(() => fetchRunners(false), 30000); // Silent refresh
     return () => clearInterval(intervalRef.current);
-  }, [statusFilter, runnersAvailable]);
+  }, [runnersAvailable]);
 
-  // Client-side name search filter
+  // Client-side filtering (search, status, label)
   const filteredRunners = useMemo(() => {
     let result = runners;
+
+    if (statusFilter !== 'all') {
+      result = result.filter((r) => r.status === statusFilter);
+    }
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -354,7 +361,7 @@ const RunnersView = () => {
     }
 
     return result;
-  }, [runners, searchQuery, labelFilter]);
+  }, [runners, searchQuery, labelFilter, statusFilter]);
 
   const handleLabelClick = useCallback((label) => {
     setLabelFilter(label);
@@ -558,7 +565,7 @@ const RunnersView = () => {
           >
             precision_manufacturing
           </span>
-          <span className="text-xs font-bold text-on-surface">{summary.total}</span>
+          <span className="text-xs font-bold text-on-surface">{totalSummary.total}</span>
           <span className="text-[10px] uppercase font-bold text-on-surface-variant/70 tracking-tighter">
             Total
           </span>
@@ -573,7 +580,7 @@ const RunnersView = () => {
           title="Filter by Idle"
         >
           <span className="w-2 h-2 rounded-full bg-secondary" />
-          <span className="text-xs font-bold text-secondary">{summary.online}</span>
+          <span className="text-xs font-bold text-secondary">{totalSummary.online}</span>
           <span className="text-[10px] uppercase font-bold text-secondary/70 tracking-tighter">
             Idle
           </span>
@@ -588,7 +595,7 @@ const RunnersView = () => {
           title="Filter by Busy"
         >
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-xs font-bold text-primary">{summary.busy}</span>
+          <span className="text-xs font-bold text-primary">{totalSummary.busy}</span>
           <span className="text-[10px] uppercase font-bold text-primary/70 tracking-tighter">
             Busy
           </span>
@@ -603,7 +610,7 @@ const RunnersView = () => {
           title="Filter by Offline"
         >
           <span className="w-2 h-2 rounded-full bg-error" />
-          <span className="text-xs font-bold text-error">{summary.offline}</span>
+          <span className="text-xs font-bold text-error">{totalSummary.offline}</span>
           <span className="text-[10px] uppercase font-bold text-error/70 tracking-tighter">
             Offline
           </span>
