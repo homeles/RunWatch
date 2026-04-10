@@ -257,6 +257,17 @@ const apiService = {
     }
   },
 
+  // Check if the GitHub App has the Self-hosted runners (Read) permission
+  getRunnersStatus: async () => {
+    try {
+      const response = await api.get(`${API_URL}/runners/status`);
+      return response.data.data || { available: false, reason: 'Unknown' };
+    } catch (error) {
+      console.error('Error fetching runners status:', error);
+      return { available: false, reason: 'Backend unreachable' };
+    }
+  },
+
   // Get all self-hosted runners with optional filters
   getRunners: async (filters = {}) => {
     try {

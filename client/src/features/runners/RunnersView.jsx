@@ -146,6 +146,7 @@ const RunnersView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [labelFilter, setLabelFilter] = useState('');
+  const [runnersAvailable, setRunnersAvailable] = useState(null); // null = checking
   const intervalRef = useRef(null);
 
   const fetchRunners = async () => {
@@ -166,13 +167,21 @@ const RunnersView = () => {
     }
   };
 
-  // Initial fetch + auto-refresh every 30 seconds
+  // Permission check on mount
   useEffect(() => {
+    apiService.getRunnersStatus().then((status) => {
+      setRunnersAvailable(status.available === true);
+    });
+  }, []);
+
+  // Initial fetch + auto-refresh every 30 seconds (only when available)
+  useEffect(() => {
+    if (!runnersAvailable) return;
     setLoading(true);
     fetchRunners();
     intervalRef.current = setInterval(fetchRunners, 30000);
     return () => clearInterval(intervalRef.current);
-  }, [statusFilter, labelFilter]);
+  }, [statusFilter, labelFilter, runnersAvailable]);
 
   // Client-side name search filter
   const filteredRunners = useMemo(() => {
@@ -200,6 +209,43 @@ const RunnersView = () => {
   const groupEntries = Object.entries(groupedByGroup).sort(([a], [b]) => a.localeCompare(b));
 
   // ─── Render ───────────────────────────────────────────────────────────────────
+
+  if (runnersAvailable === null) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!runnersAvailable) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] px-8 text-center">
+        <span
+          className="material-symbols-outlined text-outline mb-4"
+          style={{ fontSize: '48px' }}
+        >
+          lock
+        </span>
+        <h2 className="text-xl font-bold text-on-surface mb-2">Self-Hosted Runners Not Available</h2>
+        <p className="text-sm text-outline max-w-md mb-6">
+          This feature requires the GitHub App to have the{' '}
+          <span className="font-semibold text-on-surface-variant">Self-hosted runners (Read)</span>{' '}
+          organization permission. Please contact your GitHub organization admin to update the app
+          permissions.
+        </p>
+        <a
+          href="https://docs.github.com/en/apps/maintaining-github-apps/editing-a-github-apps-permissions"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 text-primary text-sm rounded-lg hover:bg-primary/20 transition-colors"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>open_in_new</span>
+          GitHub App Permissions Docs
+        </a>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

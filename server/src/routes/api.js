@@ -60,6 +60,7 @@ const restoreJsonParser = express.json({ limit: '100mb' });
 router.post('/database/restore', workflowController.requireAdminToken, restoreJsonParser, workflowController.restoreBackup);
 
 // Self-hosted runners
+router.get('/runners/status', runnerController.checkRunnersStatus);
 router.get('/runners', runnerController.listRunners);
 router.get('/runners/:runnerId', runnerController.getRunner);
 

@@ -1,14 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import apiService from '../../api/apiService';
 
-const navItems = [
+const staticNavItems = [
   { text: 'Workflows', icon: 'dashboard', path: '/' },
-  { text: 'Runners', icon: 'precision_manufacturing', path: '/runners' },
   { text: 'Statistics', icon: 'analytics', path: '/stats' },
   { text: 'Settings', icon: 'settings', path: '/settings' },
 ];
 
+const RUNNERS_TOOLTIP =
+  'Self-hosted runners monitoring requires additional GitHub App permissions. Contact your admin to enable the Self-hosted runners (Read) permission.';
+
 const Layout = ({ children }) => {
+  const [runnersAvailable, setRunnersAvailable] = useState(false);
+
+  useEffect(() => {
+    apiService.getRunnersStatus().then((status) => {
+      setRunnersAvailable(status.available === true);
+    });
+  }, []);
+
   return (
     <div className="bg-surface text-on-surface antialiased overflow-hidden">
       {/* Sidebar */}
@@ -18,11 +29,54 @@ const Layout = ({ children }) => {
         </div>
 
         <nav className="flex-1 space-y-1">
-          {navItems.map(({ text, icon, path }) => (
+          {/* Static nav items (Workflows first, then others after Runners) */}
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 transition-colors duration-200 hover:bg-[#1c2026] ${
+                isActive
+                  ? 'text-[#a2c9ff] font-medium border-l-2 border-[#a2c9ff]'
+                  : 'text-[#dfe2eb]/60 hover:text-[#dfe2eb]'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined">dashboard</span>
+            Workflows
+          </NavLink>
+
+          {/* Runners nav item — conditional on permission */}
+          {runnersAvailable ? (
+            <NavLink
+              to="/runners"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 transition-colors duration-200 hover:bg-[#1c2026] ${
+                  isActive
+                    ? 'text-[#a2c9ff] font-medium border-l-2 border-[#a2c9ff]'
+                    : 'text-[#dfe2eb]/60 hover:text-[#dfe2eb]'
+                }`
+              }
+            >
+              <span className="material-symbols-outlined">precision_manufacturing</span>
+              Runners
+            </NavLink>
+          ) : (
+            <div className="relative group">
+              <div className="flex items-center gap-3 px-3 py-2 text-[#dfe2eb]/25 cursor-not-allowed select-none">
+                <span className="material-symbols-outlined">precision_manufacturing</span>
+                Runners
+              </div>
+              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 hidden group-hover:block w-64 bg-[#1c2026] border border-[#dfe2eb]/10 rounded-lg px-3 py-2 text-xs text-[#dfe2eb]/60 shadow-xl pointer-events-none">
+                {RUNNERS_TOOLTIP}
+              </div>
+            </div>
+          )}
+
+          {/* Statistics and Settings */}
+          {staticNavItems.slice(1).map(({ text, icon, path }) => (
             <NavLink
               key={path}
               to={path}
-              end={path === '/'}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 transition-colors duration-200 hover:bg-[#1c2026] ${
                   isActive
