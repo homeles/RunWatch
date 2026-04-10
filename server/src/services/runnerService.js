@@ -1,11 +1,11 @@
 import { getGitHubClient } from '../utils/githubAuth.js';
 import WorkflowRun from '../models/WorkflowRun.js';
 
-// In-memory cache with 5-minute TTL
+// In-memory cache with 2-minute TTL
 const cache = {
   data: null,
   fetchedAt: null,
-  TTL_MS: 5 * 60 * 1000,
+  TTL_MS: 2 * 60 * 1000,
 };
 
 const isCacheValid = () =>
@@ -83,8 +83,10 @@ const fetchInstallationRunners = async (installation) => {
   if (account.type === 'Organization') {
     try {
       // Fetch all runners AND runner groups in parallel
+      // Use raw request for runners to ensure busy flag is included
+      // (Octokit v19 convenience method may strip it)
       const [runnersResult, groupMapResult] = await Promise.allSettled([
-        client.rest.actions.listSelfHostedRunnersForOrg({
+        client.request('GET /orgs/{org}/actions/runners', {
           org: account.login,
           per_page: 100,
         }),
@@ -94,7 +96,13 @@ const fetchInstallationRunners = async (installation) => {
       const groupMap = groupMapResult.status === 'fulfilled' ? groupMapResult.value : new Map();
 
       if (runnersResult.status === 'fulfilled') {
-        for (const runner of runnersResult.value.data.runners) {
+        const runnersData = runnersResult.value.data.runners;
+        // Log first runner to debug busy flag
+        if (runnersData.length > 0) {
+          const sample = runnersData[0];
+          console.log(`runnerService: sample runner for ${account.login}: name=${sample.name}, status=${sample.status}, busy=${sample.busy}, runner_group_id=${sample.runner_group_id}`);
+        }
+        for (const runner of runnersData) {
           // Look up group name from the groupMap using runner_group_id
           let groupName = null;
           if (runner.runner_group_id && groupMap.size > 0) {
