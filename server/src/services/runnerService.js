@@ -42,11 +42,13 @@ export const getAllRunners = async () => {
     }
   }
 
-  // Deduplicate by runner id (a runner may appear at both org and repo scope)
+  // Deduplicate by composite key (id + scope + repo) to allow the same
+  // physical runner to appear at both org and repo scope
   const seen = new Set();
   const unique = runners.filter((r) => {
-    if (seen.has(r.id)) return false;
-    seen.add(r.id);
+    const key = `${r.id}:${r.scope}:${r.repo || ''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
 
