@@ -1,19 +1,24 @@
 import { getGitHubClient } from '../utils/githubAuth.js';
 import WorkflowRun from '../models/WorkflowRun.js';
 
-// In-memory cache with 60-second TTL
+// In-memory cache with 5-minute TTL
 const cache = {
   data: null,
   fetchedAt: null,
-  TTL_MS: 60 * 1000,
+  TTL_MS: 5 * 60 * 1000,
 };
 
 const isCacheValid = () =>
   cache.data !== null && cache.fetchedAt !== null && Date.now() - cache.fetchedAt < cache.TTL_MS;
 
 /**
- * Fetch all self-hosted runners across all installations (org + repo level).
- * Results are cached for 60 seconds to avoid hammering the GitHub API.
+ * Fetch all self-hosted runners across all installations.
+ * Org-level runners are fetched per runner group for accurate group names.
+ * Repo-level runner fetching is skipped for org installations (org runners
+ * are already visible to all repos, and repo-level calls mostly return 403).
+ * Results are cached for 5 minutes.
+ *
+ * All org fetches run in parallel for speed.
  *
  * @returns {Promise<Array>} Flat array of runner objects
  */
@@ -22,122 +27,18 @@ export const getAllRunners = async () => {
     return cache.data;
   }
 
+  const startTime = Date.now();
   const { app, installations } = await getGitHubClient();
+
+  // Process all installations in parallel
+  const results = await Promise.allSettled(
+    installations.map((installation) => fetchInstallationRunners(installation))
+  );
+
   const runners = [];
-
-  for (const installation of installations) {
-    let client;
-    try {
-      const result = await getGitHubClient(installation.id);
-      client = result.app;
-    } catch (err) {
-      console.error(
-        `runnerService: failed to get client for installation ${installation.id}:`,
-        err.message
-      );
-      continue;
-    }
-
-    const account = installation.account;
-
-    // Org-level runners
-    if (account.type === 'Organization') {
-      try {
-        // Strategy: fetch runner groups, then fetch runners per group.
-        // This gives us accurate group names without relying on runner_group_id
-        // in the runner object (which some Octokit/API versions may not return).
-        const groupMap = await fetchRunnerGroupMap(client, account.login);
-
-        if (groupMap.size > 0) {
-          // Fetch runners per group for accurate group assignment
-          for (const [groupId, groupName] of groupMap) {
-            try {
-              const { data } = await client.request('GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners', {
-                org: account.login,
-                runner_group_id: groupId,
-                per_page: 100,
-              });
-              for (const runner of data.runners) {
-                runners.push(normalizeRunner(runner, {
-                  scope: 'org',
-                  owner: account.login,
-                  groupName,
-                }));
-              }
-            } catch (err) {
-              console.error(
-                `runnerService: failed to list runners for group ${groupName} (${groupId}) in ${account.login}:`,
-                err.message
-              );
-            }
-          }
-        } else {
-          // Fallback: fetch all runners if group fetch failed
-          const { data } = await client.rest.actions.listSelfHostedRunnersForOrg({
-            org: account.login,
-            per_page: 100,
-          });
-          for (const runner of data.runners) {
-            runners.push(normalizeRunner(runner, {
-              scope: 'org',
-              owner: account.login,
-            }));
-          }
-        }
-      } catch (err) {
-        console.error(
-          `runnerService: failed to list org runners for ${account.login}:`,
-          err.message
-        );
-      }
-    }
-
-    // Repo-level runners — list repos for this installation then fetch runners per repo
-    try {
-      let page = 1;
-      while (true) {
-        const { data: reposData } = await client.rest.apps.listReposAccessibleToInstallation({
-          per_page: 100,
-          page,
-        });
-        if (!reposData.repositories || reposData.repositories.length === 0) break;
-
-        for (const repo of reposData.repositories) {
-          try {
-            const { data: runnerData } =
-              await client.rest.actions.listSelfHostedRunnersForRepo({
-                owner: repo.owner.login,
-                repo: repo.name,
-                per_page: 100,
-              });
-            for (const runner of runnerData.runners) {
-              runners.push(
-                normalizeRunner(runner, {
-                  scope: 'repo',
-                  owner: repo.owner.login,
-                  repo: repo.name,
-                })
-              );
-            }
-          } catch (err) {
-            // Skip repos where the app lacks runner read permission
-            if (err.status !== 403 && err.status !== 404) {
-              console.error(
-                `runnerService: failed to list repo runners for ${repo.full_name}:`,
-                err.message
-              );
-            }
-          }
-        }
-
-        if (reposData.repositories.length < 100) break;
-        page++;
-      }
-    } catch (err) {
-      console.error(
-        `runnerService: failed to list repos for installation ${installation.id}:`,
-        err.message
-      );
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      runners.push(...result.value);
     }
   }
 
@@ -151,8 +52,112 @@ export const getAllRunners = async () => {
 
   cache.data = unique;
   cache.fetchedAt = Date.now();
+  console.log(`runnerService: fetched ${unique.length} runners from ${installations.length} installations in ${Date.now() - startTime}ms`);
 
   return unique;
+};
+
+/**
+ * Fetch runners for a single installation.
+ * For orgs: fetch runner groups, then runners per group (skips repo-level).
+ * For user accounts: fetch repo-level runners.
+ */
+const fetchInstallationRunners = async (installation) => {
+  const runners = [];
+  let client;
+
+  try {
+    const result = await getGitHubClient(installation.id);
+    client = result.app;
+  } catch (err) {
+    console.error(
+      `runnerService: failed to get client for installation ${installation.id}:`,
+      err.message
+    );
+    return runners;
+  }
+
+  const account = installation.account;
+
+  if (account.type === 'Organization') {
+    // Org-level: fetch runner groups, then runners per group
+    try {
+      const groupMap = await fetchRunnerGroupMap(client, account.login);
+
+      if (groupMap.size > 0) {
+        // Fetch runners per group in parallel
+        const groupResults = await Promise.allSettled(
+          [...groupMap.entries()].map(async ([groupId, groupName]) => {
+            const { data } = await client.request('GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners', {
+              org: account.login,
+              runner_group_id: groupId,
+              per_page: 100,
+            });
+            return data.runners.map((runner) =>
+              normalizeRunner(runner, { scope: 'org', owner: account.login, groupName })
+            );
+          })
+        );
+
+        for (const result of groupResults) {
+          if (result.status === 'fulfilled') {
+            runners.push(...result.value);
+          }
+        }
+      } else {
+        // Fallback: fetch all runners if group fetch failed
+        const { data } = await client.rest.actions.listSelfHostedRunnersForOrg({
+          org: account.login,
+          per_page: 100,
+        });
+        for (const runner of data.runners) {
+          runners.push(normalizeRunner(runner, { scope: 'org', owner: account.login }));
+        }
+      }
+    } catch (err) {
+      console.error(
+        `runnerService: failed to list org runners for ${account.login}:`,
+        err.message
+      );
+    }
+    // Skip repo-level fetching for orgs — org runners are already visible
+    // to all repos, and repo-level calls mostly return 403.
+  } else {
+    // User-level: fetch repo-level runners
+    try {
+      const { data: reposData } = await client.rest.apps.listReposAccessibleToInstallation({
+        per_page: 100,
+      });
+
+      if (reposData.repositories && reposData.repositories.length > 0) {
+        const repoResults = await Promise.allSettled(
+          reposData.repositories.map(async (repo) => {
+            const { data: runnerData } = await client.rest.actions.listSelfHostedRunnersForRepo({
+              owner: repo.owner.login,
+              repo: repo.name,
+              per_page: 100,
+            });
+            return runnerData.runners.map((runner) =>
+              normalizeRunner(runner, { scope: 'repo', owner: repo.owner.login, repo: repo.name })
+            );
+          })
+        );
+
+        for (const result of repoResults) {
+          if (result.status === 'fulfilled') {
+            runners.push(...result.value);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(
+        `runnerService: failed to list repos for installation ${installation.id}:`,
+        err.message
+      );
+    }
+  }
+
+  return runners;
 };
 
 /**

@@ -278,9 +278,11 @@ const RunnersView = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [labelFilter, setLabelFilter] = useState('');
   const [runnersAvailable, setRunnersAvailable] = useState(null); // null = checking
+  const [lastUpdated, setLastUpdated] = useState(null);
   const intervalRef = useRef(null);
 
-  const fetchRunners = async () => {
+  const fetchRunners = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       const filters = {};
       if (statusFilter !== 'all') filters.status = statusFilter;
@@ -289,6 +291,7 @@ const RunnersView = () => {
       setRunners(data.runners ?? []);
       setSummary(data.summary ?? { total: 0, online: 0, busy: 0, offline: 0 });
       setError(null);
+      setLastUpdated(new Date());
     } catch (err) {
       setError('Failed to fetch runners. Please try again.');
       console.error(err);
@@ -307,9 +310,8 @@ const RunnersView = () => {
   // Initial fetch + auto-refresh every 30 seconds (only when available)
   useEffect(() => {
     if (!runnersAvailable) return;
-    setLoading(true);
-    fetchRunners();
-    intervalRef.current = setInterval(fetchRunners, 30000);
+    fetchRunners(true); // Show spinner only on initial load
+    intervalRef.current = setInterval(() => fetchRunners(false), 30000); // Silent refresh
     return () => clearInterval(intervalRef.current);
   }, [statusFilter, runnersAvailable]);
 
@@ -406,7 +408,7 @@ const RunnersView = () => {
       <div className="mt-8 text-center">
         <p className="text-error text-sm">{error}</p>
         <button
-          onClick={() => { setLoading(true); fetchRunners(); }}
+          onClick={() => { fetchRunners(true); }}
           className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 text-primary text-sm rounded-lg hover:bg-primary/20 transition-colors"
         >
           <span className="material-symbols-outlined text-sm">refresh</span>
@@ -482,7 +484,7 @@ const RunnersView = () => {
 
           {/* Manual refresh */}
           <button
-            onClick={() => { setLoading(true); fetchRunners(); }}
+            onClick={() => { fetchRunners(true); }}
             title="Refresh"
             className="p-1.5 text-on-surface-variant hover:text-primary material-symbols-outlined transition-colors leading-none"
             style={{ fontSize: '18px' }}
