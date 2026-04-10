@@ -1,7 +1,7 @@
 // Mock API Service for RunWatch Demo Mode
 // Drop-in replacement for apiService — returns mock data with simulated latency
 
-import { allRuns, repos, computeWorkflowMetrics, computeJobMetrics, computeStats } from './mockData';
+import { allRuns, repos, computeWorkflowMetrics, computeJobMetrics, computeStats, mockRunners, mockRunnersSummary } from './mockData';
 
 const delay = (ms = 300) => new Promise(r => setTimeout(r, ms + Math.random() * 200));
 
@@ -145,6 +145,35 @@ const mockApiService = {
   getJobMetrics: async () => {
     await delay();
     return computeJobMetrics();
+  },
+
+  // Runner methods
+  getRunnersStatus: async () => {
+    await delay(100);
+    return { available: true, reason: 'Demo mode — runners always available' };
+  },
+
+  getRunners: async (filters = {}) => {
+    await delay();
+    let runners = [...mockRunners];
+    if (filters.status && filters.status !== 'all') {
+      runners = runners.filter(r => r.status === filters.status);
+    }
+    return {
+      runners,
+      summary: mockRunnersSummary,
+      cache: { ttlMs: 120000, cachedAt: new Date().toISOString(), ageMs: 0, valid: true },
+    };
+  },
+
+  getRunnerById: async (id) => {
+    await delay();
+    return mockRunners.find(r => r.id === Number(id)) || null;
+  },
+
+  invalidateRunnerCache: async () => {
+    await delay(100);
+    return { invalidated: true };
   },
 };
 

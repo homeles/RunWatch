@@ -243,5 +243,61 @@ function computeStats() {
   };
 }
 
+// ── Mock Runners ─────────────────────────────────────
+const mockRunners = [
+  {
+    id: 1, name: 'build-server-01', status: 'busy', os: 'Linux',
+    labels: ['self-hosted', 'linux', 'x64', 'build'], runnerGroup: 'Production',
+    runnerGroupId: 1, busy: true, scope: 'org', owner: 'acme-corp', repo: null,
+    activeJob: {
+      workflowName: 'CI', jobName: 'build-and-test', workflowRunId: allRuns[0]?.run?.id,
+      workflowRunUrl: 'https://github.com/acme-corp/web-platform/actions/runs/1001',
+      repository: 'acme-corp/web-platform',
+    },
+  },
+  {
+    id: 2, name: 'build-server-02', status: 'idle', os: 'Linux',
+    labels: ['self-hosted', 'linux', 'x64', 'build'], runnerGroup: 'Production',
+    runnerGroupId: 1, busy: false, scope: 'org', owner: 'acme-corp', repo: null,
+  },
+  {
+    id: 3, name: 'mac-runner-01', status: 'busy', os: 'macOS',
+    labels: ['self-hosted', 'macOS', 'ARM64', 'ios'], runnerGroup: 'macOS',
+    runnerGroupId: 2, busy: true, scope: 'org', owner: 'acme-corp', repo: null,
+    activeJob: {
+      workflowName: 'iOS Build', jobName: 'build-ipa', workflowRunId: allRuns[2]?.run?.id,
+      workflowRunUrl: 'https://github.com/acme-corp/mobile-app/actions/runs/3001',
+      repository: 'acme-corp/mobile-app',
+    },
+  },
+  {
+    id: 4, name: 'mac-runner-02', status: 'idle', os: 'macOS',
+    labels: ['self-hosted', 'macOS', 'ARM64', 'ios'], runnerGroup: 'macOS',
+    runnerGroupId: 2, busy: false, scope: 'org', owner: 'acme-corp', repo: null,
+  },
+  {
+    id: 5, name: 'gpu-runner', status: 'offline', os: 'Linux',
+    labels: ['self-hosted', 'linux', 'gpu', 'ml'], runnerGroup: 'GPU Cluster',
+    runnerGroupId: 3, busy: false, scope: 'org', owner: 'acme-corp', repo: null,
+  },
+  {
+    id: 6, name: 'windows-build', status: 'idle', os: 'Windows',
+    labels: ['self-hosted', 'windows', 'x64', 'dotnet'], runnerGroup: 'Default',
+    runnerGroupId: 4, busy: false, scope: 'org', owner: 'acme-corp', repo: null,
+  },
+  {
+    id: 7, name: 'infra-runner', status: 'idle', os: 'Linux',
+    labels: ['self-hosted', 'linux', 'terraform', 'infra'], runnerGroup: 'Default',
+    runnerGroupId: 4, busy: false, scope: 'repo', owner: 'acme-corp', repo: 'infra-terraform',
+  },
+];
+
+const mockRunnersSummary = {
+  total: mockRunners.length,
+  online: mockRunners.filter(r => r.status === 'idle').length,
+  busy: mockRunners.filter(r => r.status === 'busy').length,
+  offline: mockRunners.filter(r => r.status === 'offline').length,
+};
+
 // ── Exports ──────────────────────────────────────────
-export { allRuns, repos, workflows, computeWorkflowMetrics, computeJobMetrics, computeStats };
+export { allRuns, repos, workflows, computeWorkflowMetrics, computeJobMetrics, computeStats, mockRunners, mockRunnersSummary };
