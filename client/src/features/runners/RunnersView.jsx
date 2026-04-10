@@ -296,7 +296,6 @@ const RunnersView = () => {
   const handleLabelClick = useCallback((label) => {
     setLabelFilter(label);
   }, []);
-  }, [runners, searchQuery]);
 
   // Group by org
   const groupedByOrg = useMemo(() => {
