@@ -33,7 +33,7 @@ const osIcon = (os) => {
 
 // ─── RunnerCard ────────────────────────────────────────────────────────────────
 
-const RunnerCard = ({ runner, onLabelClick }) => {
+const RunnerCard = ({ runner, onLabelClick, onStatusClick }) => {
   const meta = statusMeta(runner.status);
 
   return (
@@ -51,10 +51,14 @@ const RunnerCard = ({ runner, onLabelClick }) => {
             {runner.name}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <button
+          onClick={() => onStatusClick && onStatusClick(runner.status)}
+          className="flex items-center gap-1.5 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+          title={`Filter by ${meta.label}`}
+        >
           <span className={`w-2 h-2 rounded-full ${meta.dot}`} />
           <span className={`text-xs font-semibold ${meta.text}`}>{meta.label}</span>
-        </div>
+        </button>
       </div>
 
       {/* Scope */}
@@ -148,7 +152,7 @@ const RunnerCard = ({ runner, onLabelClick }) => {
 
 // ─── RunnerGroup ──────────────────────────────────────────────────────────────
 
-const RunnerGroup = ({ groupName, runners, onLabelClick }) => {
+const RunnerGroup = ({ groupName, runners, onLabelClick, onStatusClick }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -174,7 +178,7 @@ const RunnerGroup = ({ groupName, runners, onLabelClick }) => {
       {!collapsed && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {runners.map((runner) => (
-            <RunnerCard key={runner.id} runner={runner} onLabelClick={onLabelClick} />
+            <RunnerCard key={runner.id} runner={runner} onLabelClick={onLabelClick} onStatusClick={onStatusClick} />
           ))}
         </div>
       )}
@@ -184,7 +188,7 @@ const RunnerGroup = ({ groupName, runners, onLabelClick }) => {
 
 // ─── OrgSection ───────────────────────────────────────────────────────────────
 
-const OrgSection = ({ orgName, runners, onLabelClick }) => {
+const OrgSection = ({ orgName, runners, onLabelClick, onStatusClick }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   // Group runners by runner group within this org
@@ -259,6 +263,7 @@ const OrgSection = ({ orgName, runners, onLabelClick }) => {
               groupName={groupName}
               runners={groupRunners}
               onLabelClick={onLabelClick}
+              onStatusClick={onStatusClick}
             />
           ))}
         </div>
@@ -353,6 +358,10 @@ const RunnersView = () => {
 
   const handleLabelClick = useCallback((label) => {
     setLabelFilter(label);
+  }, []);
+
+  const handleStatusClick = useCallback((status) => {
+    setStatusFilter((prev) => (prev === status ? 'all' : status));
   }, []);
 
   // Group by org
@@ -536,7 +545,13 @@ const RunnersView = () => {
         <div className="h-6 w-px bg-outline-variant/20 mx-1" />
 
         {/* Total */}
-        <div className="flex items-center gap-2 bg-surface-container border border-outline-variant/20 rounded-full pl-2 pr-3 py-1">
+        <button
+          onClick={() => setStatusFilter('all')}
+          className={`flex items-center gap-2 bg-surface-container border rounded-full pl-2 pr-3 py-1 transition-all cursor-pointer hover:bg-surface-container-high ${
+            statusFilter === 'all' ? 'border-on-surface/40 ring-1 ring-on-surface/20' : 'border-outline-variant/20'
+          }`}
+          title="Show all runners"
+        >
           <span
             className="material-symbols-outlined text-on-surface-variant leading-none"
             style={{ fontSize: '14px', fontVariationSettings: "'FILL' 1" }}
@@ -547,34 +562,52 @@ const RunnersView = () => {
           <span className="text-[10px] uppercase font-bold text-on-surface-variant/70 tracking-tighter">
             Total
           </span>
-        </div>
+        </button>
 
         {/* Idle/Online */}
-        <div className="flex items-center gap-2 bg-secondary/10 border border-secondary/20 rounded-full pl-2 pr-3 py-1">
+        <button
+          onClick={() => setStatusFilter(statusFilter === 'idle' ? 'all' : 'idle')}
+          className={`flex items-center gap-2 bg-secondary/10 border rounded-full pl-2 pr-3 py-1 transition-all cursor-pointer hover:bg-secondary/20 ${
+            statusFilter === 'idle' ? 'border-secondary/60 ring-1 ring-secondary/30' : 'border-secondary/20'
+          }`}
+          title="Filter by Idle"
+        >
           <span className="w-2 h-2 rounded-full bg-secondary" />
           <span className="text-xs font-bold text-secondary">{summary.online}</span>
           <span className="text-[10px] uppercase font-bold text-secondary/70 tracking-tighter">
             Idle
           </span>
-        </div>
+        </button>
 
         {/* Busy */}
-        <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full pl-2 pr-3 py-1">
+        <button
+          onClick={() => setStatusFilter(statusFilter === 'busy' ? 'all' : 'busy')}
+          className={`flex items-center gap-2 bg-primary/10 border rounded-full pl-2 pr-3 py-1 transition-all cursor-pointer hover:bg-primary/20 ${
+            statusFilter === 'busy' ? 'border-primary/60 ring-1 ring-primary/30' : 'border-primary/20'
+          }`}
+          title="Filter by Busy"
+        >
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           <span className="text-xs font-bold text-primary">{summary.busy}</span>
           <span className="text-[10px] uppercase font-bold text-primary/70 tracking-tighter">
             Busy
           </span>
-        </div>
+        </button>
 
         {/* Offline */}
-        <div className="flex items-center gap-2 bg-error/10 border border-error/20 rounded-full pl-2 pr-3 py-1">
+        <button
+          onClick={() => setStatusFilter(statusFilter === 'offline' ? 'all' : 'offline')}
+          className={`flex items-center gap-2 bg-error/10 border rounded-full pl-2 pr-3 py-1 transition-all cursor-pointer hover:bg-error/20 ${
+            statusFilter === 'offline' ? 'border-error/60 ring-1 ring-error/30' : 'border-error/20'
+          }`}
+          title="Filter by Offline"
+        >
           <span className="w-2 h-2 rounded-full bg-error" />
           <span className="text-xs font-bold text-error">{summary.offline}</span>
           <span className="text-[10px] uppercase font-bold text-error/70 tracking-tighter">
             Offline
           </span>
-        </div>
+        </button>
       </div>
 
       {/* Runners grouped by org */}
@@ -600,6 +633,7 @@ const RunnersView = () => {
               orgName={orgName}
               runners={orgRunners}
               onLabelClick={handleLabelClick}
+              onStatusClick={handleStatusClick}
             />
           ))
         )}
