@@ -82,10 +82,12 @@ const fetchInstallationRunners = async (installation) => {
 
   if (account.type === 'Organization') {
     try {
-      // Fetch all runners AND runner groups in parallel
-      // Use raw request for runners to ensure busy flag is included
-      // (Octokit v19 convenience method may strip it)
-      const [runnersResult, groupMapResult] = await Promise.allSettled([
+      // Two-phase approach:
+      // 1. Fetch all runners (raw API) to get accurate busy status
+      // 2. Fetch runners per group to get accurate group names
+      // Then merge: use group names from phase 2, busy status from phase 1
+
+      const [allRunnersResult, groupMapResult] = await Promise.allSettled([
         client.request('GET /orgs/{org}/actions/runners', {
           org: account.login,
           per_page: 100,
@@ -95,31 +97,49 @@ const fetchInstallationRunners = async (installation) => {
 
       const groupMap = groupMapResult.status === 'fulfilled' ? groupMapResult.value : new Map();
 
-      if (runnersResult.status === 'fulfilled') {
-        const runnersData = runnersResult.value.data.runners;
-        // Log first runner to debug busy flag
-        if (runnersData.length > 0) {
-          const sample = runnersData[0];
-          console.log(`runnerService: sample runner for ${account.login}: name=${sample.name}, status=${sample.status}, busy=${sample.busy}, runner_group_id=${sample.runner_group_id}`);
-        }
-        for (const runner of runnersData) {
-          // Look up group name from the groupMap using runner_group_id
-          let groupName = null;
-          if (runner.runner_group_id && groupMap.size > 0) {
-            groupName = groupMap.get(runner.runner_group_id) ?? null;
+      // Build a busy status map from the all-runners response
+      const busyMap = new Map();
+      if (allRunnersResult.status === 'fulfilled') {
+        for (const runner of allRunnersResult.value.data.runners) {
+          busyMap.set(runner.id, runner.busy ?? false);
+          // Debug log for first runner
+          if (busyMap.size === 1) {
+            console.log(`runnerService: sample runner for ${account.login}: name=${runner.name}, status=${runner.status}, busy=${runner.busy}, runner_group_id=${runner.runner_group_id}`);
           }
-
-          runners.push(normalizeRunner(runner, {
-            scope: 'org',
-            owner: account.login,
-            groupName,
-          }));
         }
-      } else {
-        console.error(
-          `runnerService: failed to list org runners for ${account.login}:`,
-          runnersResult.reason?.message
+      }
+
+      if (groupMap.size > 0) {
+        // Fetch runners per group in parallel for accurate group assignment
+        const groupResults = await Promise.allSettled(
+          [...groupMap.entries()].map(async ([groupId, groupName]) => {
+            const { data } = await client.request('GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners', {
+              org: account.login,
+              runner_group_id: groupId,
+              per_page: 100,
+            });
+            return data.runners.map((runner) => {
+              // Override busy from the all-runners response (more reliable)
+              const busy = busyMap.has(runner.id) ? busyMap.get(runner.id) : (runner.busy ?? false);
+              return normalizeRunner({ ...runner, busy }, {
+                scope: 'org',
+                owner: account.login,
+                groupName,
+              });
+            });
+          })
         );
+
+        for (const result of groupResults) {
+          if (result.status === 'fulfilled') {
+            runners.push(...result.value);
+          }
+        }
+      } else if (allRunnersResult.status === 'fulfilled') {
+        // Fallback: use all-runners response if groups couldn't be fetched
+        for (const runner of allRunnersResult.value.data.runners) {
+          runners.push(normalizeRunner(runner, { scope: 'org', owner: account.login }));
+        }
       }
     } catch (err) {
       console.error(
