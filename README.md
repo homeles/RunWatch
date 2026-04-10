@@ -112,6 +112,7 @@ The application is structured as follows:
    - Create a GitHub App in your organization's settings
    - Define the below **Repository permissions** for the App:
      - `Read` access to **Actions**
+     - `Read` access to **Administration** _(required for repo-level self-hosted runners)_
      - `Read` access to **Metadata**
      - `Read and write` access to **Workflows** _(reserved for future use)_
    - Define the below **Organization permissions** for the App:
@@ -125,7 +126,11 @@ The application is structured as follows:
    - Place the private key file in your project directory
    - Update the `GITHUB_APP_ID` and `GITHUB_APP_PRIVATE_KEY_PATH` in your `.env` file
 
-   > **Upgrading?** If you already have a GitHub App configured for RunWatch, go to your App's settings → Permissions & events → Organization permissions → add **Self-hosted runners: Read**. Then visit each installation and approve the new permission request.
+   > **Upgrading?** If you already have a GitHub App configured for RunWatch, go to your App's settings → Permissions & events:
+   > - **Organization permissions** → add **Self-hosted runners: Read**
+   > - **Repository permissions** → add **Administration: Read** _(needed for repo-level runners)_
+   >
+   > Then visit each installation and approve the new permission request.
 
 ### Backend Setup
 
