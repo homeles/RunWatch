@@ -124,6 +124,9 @@ export const listRunners = async (req, res) => {
       );
     }
 
+    // Enrich busy runners with active workflow/job info from RunWatch DB
+    runners = await runnerService.enrichRunnersWithActiveJobs(runners);
+
     const summary = {
       total: runners.length,
       online: runners.filter((r) => r.status === 'idle').length,

@@ -83,6 +83,50 @@ const RunnerCard = ({ runner, onLabelClick }) => {
         </div>
       )}
 
+      {/* Active job (when busy) */}
+      {runner.status === 'busy' && runner.activeJob && (
+        <div className="flex flex-col gap-1.5 bg-primary/5 border border-primary/10 rounded-lg px-3 py-2">
+          <div className="flex items-center gap-1.5 text-[11px] text-primary/80">
+            <span
+              className="material-symbols-outlined leading-none"
+              style={{ fontSize: '13px' }}
+            >
+              play_circle
+            </span>
+            <span className="font-semibold truncate">{runner.activeJob.workflowName || 'Workflow'}</span>
+            {runner.activeJob.jobName && (
+              <span className="text-primary/50 truncate">/ {runner.activeJob.jobName}</span>
+            )}
+          </div>
+          {runner.activeJob.repository && (
+            <div className="text-[10px] text-primary/50 truncate ml-[21px]">{runner.activeJob.repository}</div>
+          )}
+          <div className="flex items-center gap-2 ml-[21px]">
+            {runner.activeJob.workflowRunId && (
+              <a
+                href={`/workflow/${runner.activeJob.workflowRunId}`}
+                className="text-[10px] font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
+                title="View in RunWatch"
+              >
+                RunWatch →
+              </a>
+            )}
+            {runner.activeJob.workflowRunUrl && (
+              <a
+                href={runner.activeJob.workflowRunUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-medium text-primary/60 hover:text-primary/80 hover:underline transition-colors flex items-center gap-0.5"
+                title="View on GitHub"
+              >
+                GitHub
+                <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>open_in_new</span>
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Labels */}
       {runner.labels.length > 0 && (
         <div className="flex flex-wrap gap-1">

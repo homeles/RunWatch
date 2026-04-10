@@ -1,4 +1,5 @@
 import { getGitHubClient } from '../utils/githubAuth.js';
+import WorkflowRun from '../models/WorkflowRun.js';
 
 // In-memory cache with 60-second TTL
 const cache = {
@@ -172,6 +173,76 @@ export const getRunnerById = async (runnerId) => {
 export const invalidateCache = () => {
   cache.data = null;
   cache.fetchedAt = null;
+};
+
+/**
+ * Enrich runners with active workflow/job info from the RunWatch database.
+ * For busy runners, find the in-progress workflow run whose jobs match the runner name.
+ */
+export const enrichRunnersWithActiveJobs = async (runners) => {
+  const busyRunners = runners.filter((r) => r.status === 'busy');
+  if (busyRunners.length === 0) return runners;
+
+  const busyNames = busyRunners.map((r) => r.name);
+
+  try {
+    // Find in-progress workflow runs that have jobs assigned to these runners
+    const activeRuns = await WorkflowRun.find({
+      'run.status': 'in_progress',
+      'jobs.runner_name': { $in: busyNames },
+    }).lean();
+
+    // Build a map: runner_name → { workflow info, job info, links }
+    const runnerJobMap = new Map();
+    for (const run of activeRuns) {
+      if (!run.jobs) continue;
+      for (const job of run.jobs) {
+        if (job.runner_name && busyNames.includes(job.runner_name) && job.status === 'in_progress') {
+          runnerJobMap.set(job.runner_name, {
+            workflowName: run.workflow?.name ?? null,
+            workflowRunId: run.run?.id ?? null,
+            workflowRunUrl: run.run?.url ?? null,
+            jobName: job.name ?? null,
+            repository: run.repository?.fullName ?? null,
+          });
+        }
+      }
+    }
+
+    // Also check runner_name at the run level (for runs without job details)
+    if (runnerJobMap.size < busyRunners.length) {
+      const remainingNames = busyNames.filter((n) => !runnerJobMap.has(n));
+      if (remainingNames.length > 0) {
+        const runLevelMatches = await WorkflowRun.find({
+          'run.status': 'in_progress',
+          'run.runner_name': { $in: remainingNames },
+        }).lean();
+
+        for (const run of runLevelMatches) {
+          if (run.run?.runner_name && remainingNames.includes(run.run.runner_name)) {
+            runnerJobMap.set(run.run.runner_name, {
+              workflowName: run.workflow?.name ?? null,
+              workflowRunId: run.run?.id ?? null,
+              workflowRunUrl: run.run?.url ?? null,
+              jobName: null,
+              repository: run.repository?.fullName ?? null,
+            });
+          }
+        }
+      }
+    }
+
+    // Attach active job info to runners
+    return runners.map((r) => {
+      if (r.status === 'busy' && runnerJobMap.has(r.name)) {
+        return { ...r, activeJob: runnerJobMap.get(r.name) };
+      }
+      return r;
+    });
+  } catch (err) {
+    console.error('runnerService: failed to enrich runners with active jobs:', err.message);
+    return runners;
+  }
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
