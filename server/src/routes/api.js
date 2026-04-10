@@ -1,5 +1,6 @@
 import express from 'express';
 import * as workflowController from '../controllers/workflowController.js';
+import * as runnerController from '../controllers/runnerController.js';
 import { syncGitHubData, getAvailableOrganizations, getSyncHistory } from '../services/syncService.js';
 import { validateGitHubConfig } from '../utils/githubAuth.js';
 import SyncHistory from '../models/SyncHistory.js';
@@ -57,6 +58,12 @@ router.get('/database/backup', workflowController.requireAdminToken, workflowCon
 // Restore uses a 100mb body limit (applied AFTER auth to prevent unauthenticated memory exhaustion).
 const restoreJsonParser = express.json({ limit: '100mb' });
 router.post('/database/restore', workflowController.requireAdminToken, restoreJsonParser, workflowController.restoreBackup);
+
+// Self-hosted runners
+router.get('/runners/status', runnerController.checkRunnersStatus);
+router.post('/runners/cache/invalidate', runnerController.invalidateCache);
+router.get('/runners', runnerController.listRunners);
+router.get('/runners/:runnerId', runnerController.getRunner);
 
 // Get available organizations
 router.get('/organizations', async (req, res) => {

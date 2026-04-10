@@ -255,7 +255,51 @@ const apiService = {
       console.error('Error fetching database status:', error);
       throw error;
     }
-  }
+  },
+
+  // Check if the GitHub App has the Self-hosted runners (Read) permission
+  getRunnersStatus: async () => {
+    try {
+      const response = await api.get(`${API_URL}/runners/status`);
+      return response.data.data || { available: false, reason: 'Unknown' };
+    } catch (error) {
+      console.error('Error fetching runners status:', error);
+      return { available: false, reason: 'Backend unreachable' };
+    }
+  },
+
+  // Get all self-hosted runners with optional filters
+  getRunners: async (filters = {}) => {
+    try {
+      const response = await api.get(`${API_URL}/runners`, { params: filters });
+      return response.data.data || { runners: [], summary: {} };
+    } catch (error) {
+      console.error('Error fetching runners:', error);
+      throw error;
+    }
+  },
+
+  // Get a specific runner by ID
+  getRunnerById: async (id) => {
+    try {
+      const response = await api.get(`${API_URL}/runners/${encodeURIComponent(String(id))}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching runner:', sanitizeLog(id), error);
+      throw error;
+    }
+  },
+
+  // Force invalidate the runner cache on the server
+  invalidateRunnerCache: async () => {
+    try {
+      const response = await api.post(`${API_URL}/runners/cache/invalidate`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error invalidating runner cache:', error);
+      throw error;
+    }
+  },
 };
 
 export default apiService;
