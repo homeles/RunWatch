@@ -136,6 +136,90 @@ const RunnerGroup = ({ groupName, runners }) => {
   );
 };
 
+// ─── OrgSection ───────────────────────────────────────────────────────────────
+
+const OrgSection = ({ orgName, runners }) => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Group runners by runner group within this org
+  const groupedByGroup = useMemo(() => {
+    const groups = {};
+    for (const runner of runners) {
+      const key = runner.runnerGroup || '';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(runner);
+    }
+    return groups;
+  }, [runners]);
+
+  const groupEntries = Object.entries(groupedByGroup).sort(([a], [b]) => a.localeCompare(b));
+
+  // Org-level stats
+  const orgStats = useMemo(() => ({
+    total: runners.length,
+    idle: runners.filter((r) => r.status === 'idle').length,
+    busy: runners.filter((r) => r.status === 'busy').length,
+    offline: runners.filter((r) => r.status === 'offline').length,
+  }), [runners]);
+
+  return (
+    <div className="mb-8">
+      <button
+        onClick={() => setCollapsed((c) => !c)}
+        className="flex items-center gap-3 mb-4 group w-full text-left"
+      >
+        <span
+          className={`material-symbols-outlined text-on-surface-variant transition-transform ${
+            collapsed ? '-rotate-90' : ''
+          }`}
+          style={{ fontSize: '18px' }}
+        >
+          expand_more
+        </span>
+        <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '18px' }}>
+          corporate_fare
+        </span>
+        <span className="text-sm font-bold text-on-surface group-hover:text-primary transition-colors">
+          {orgName}
+        </span>
+        <div className="flex items-center gap-2 ml-2">
+          <span className="text-[10px] font-semibold text-on-surface-variant/60">{orgStats.total} runners</span>
+          {orgStats.idle > 0 && (
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+              <span className="text-[10px] font-semibold text-secondary">{orgStats.idle}</span>
+            </span>
+          )}
+          {orgStats.busy > 0 && (
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <span className="text-[10px] font-semibold text-primary">{orgStats.busy}</span>
+            </span>
+          )}
+          {orgStats.offline > 0 && (
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-error" />
+              <span className="text-[10px] font-semibold text-error">{orgStats.offline}</span>
+            </span>
+          )}
+        </div>
+      </button>
+
+      {!collapsed && (
+        <div className="ml-6 border-l border-outline-variant/10 pl-4">
+          {groupEntries.map(([groupName, groupRunners]) => (
+            <RunnerGroup
+              key={groupName || '__default__'}
+              groupName={groupName}
+              runners={groupRunners}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── RunnersView ──────────────────────────────────────────────────────────────
 
 const RunnersView = () => {
@@ -195,18 +279,18 @@ const RunnersView = () => {
     );
   }, [runners, searchQuery]);
 
-  // Group by runner group name
-  const groupedByGroup = useMemo(() => {
-    const groups = {};
+  // Group by org
+  const groupedByOrg = useMemo(() => {
+    const orgs = {};
     for (const runner of filteredRunners) {
-      const key = runner.runnerGroup || '';
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(runner);
+      const key = runner.owner || 'Unknown';
+      if (!orgs[key]) orgs[key] = [];
+      orgs[key].push(runner);
     }
-    return groups;
+    return orgs;
   }, [filteredRunners]);
 
-  const groupEntries = Object.entries(groupedByGroup).sort(([a], [b]) => a.localeCompare(b));
+  const orgEntries = Object.entries(groupedByOrg).sort(([a], [b]) => a.localeCompare(b));
 
   // ─── Render ───────────────────────────────────────────────────────────────────
 
@@ -384,7 +468,7 @@ const RunnersView = () => {
         </div>
       </div>
 
-      {/* Runner groups */}
+      {/* Runners grouped by org */}
       <div className="px-6">
         {filteredRunners.length === 0 ? (
           <div className="text-center py-16 bg-primary/5 border border-primary/10 rounded-xl">
@@ -401,11 +485,11 @@ const RunnersView = () => {
             </p>
           </div>
         ) : (
-          groupEntries.map(([groupName, groupRunners]) => (
-            <RunnerGroup
-              key={groupName || '__default__'}
-              groupName={groupName}
-              runners={groupRunners}
+          orgEntries.map(([orgName, orgRunners]) => (
+            <OrgSection
+              key={orgName}
+              orgName={orgName}
+              runners={orgRunners}
             />
           ))
         )}
