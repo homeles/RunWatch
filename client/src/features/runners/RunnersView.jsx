@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import apiService from '../../api/apiService';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ const osIcon = (os) => {
 
 // ─── RunnerCard ────────────────────────────────────────────────────────────────
 
-const RunnerCard = ({ runner }) => {
+const RunnerCard = ({ runner, onLabelClick }) => {
   const meta = statusMeta(runner.status);
 
   return (
@@ -87,12 +87,14 @@ const RunnerCard = ({ runner }) => {
       {runner.labels.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {runner.labels.map((label) => (
-            <span
+            <button
               key={label}
-              className="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-medium text-primary/80"
+              onClick={() => onLabelClick && onLabelClick(label)}
+              className="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-medium text-primary/80 hover:bg-primary/20 hover:text-primary transition-colors cursor-pointer"
+              title={`Filter by "${label}"`}
             >
               {label}
-            </span>
+            </button>
           ))}
         </div>
       )}
@@ -102,7 +104,7 @@ const RunnerCard = ({ runner }) => {
 
 // ─── RunnerGroup ──────────────────────────────────────────────────────────────
 
-const RunnerGroup = ({ groupName, runners }) => {
+const RunnerGroup = ({ groupName, runners, onLabelClick }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -128,7 +130,7 @@ const RunnerGroup = ({ groupName, runners }) => {
       {!collapsed && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {runners.map((runner) => (
-            <RunnerCard key={runner.id} runner={runner} />
+            <RunnerCard key={runner.id} runner={runner} onLabelClick={onLabelClick} />
           ))}
         </div>
       )}
@@ -138,7 +140,7 @@ const RunnerGroup = ({ groupName, runners }) => {
 
 // ─── OrgSection ───────────────────────────────────────────────────────────────
 
-const OrgSection = ({ orgName, runners }) => {
+const OrgSection = ({ orgName, runners, onLabelClick }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   // Group runners by runner group within this org
@@ -212,6 +214,7 @@ const OrgSection = ({ orgName, runners }) => {
               key={groupName || '__default__'}
               groupName={groupName}
               runners={groupRunners}
+              onLabelClick={onLabelClick}
             />
           ))}
         </div>
@@ -237,7 +240,6 @@ const RunnersView = () => {
     try {
       const filters = {};
       if (statusFilter !== 'all') filters.status = statusFilter;
-      if (labelFilter) filters.label = labelFilter;
 
       const data = await apiService.getRunners(filters);
       setRunners(data.runners ?? []);
@@ -265,18 +267,35 @@ const RunnersView = () => {
     fetchRunners();
     intervalRef.current = setInterval(fetchRunners, 30000);
     return () => clearInterval(intervalRef.current);
-  }, [statusFilter, labelFilter, runnersAvailable]);
+  }, [statusFilter, runnersAvailable]);
 
   // Client-side name search filter
   const filteredRunners = useMemo(() => {
-    if (!searchQuery) return runners;
-    const q = searchQuery.toLowerCase();
-    return runners.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) ||
-        r.owner.toLowerCase().includes(q) ||
-        (r.repo && r.repo.toLowerCase().includes(q))
-    );
+    let result = runners;
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (r) =>
+          r.name.toLowerCase().includes(q) ||
+          r.owner.toLowerCase().includes(q) ||
+          (r.repo && r.repo.toLowerCase().includes(q))
+      );
+    }
+
+    if (labelFilter) {
+      const lf = labelFilter.toLowerCase();
+      result = result.filter((r) =>
+        r.labels.some((l) => l.toLowerCase().includes(lf))
+      );
+    }
+
+    return result;
+  }, [runners, searchQuery, labelFilter]);
+
+  const handleLabelClick = useCallback((label) => {
+    setLabelFilter(label);
+  }, []);
   }, [runners, searchQuery]);
 
   // Group by org
@@ -405,8 +424,17 @@ const RunnersView = () => {
               placeholder="Filter by label..."
               value={labelFilter}
               onChange={(e) => setLabelFilter(e.target.value)}
-              className="bg-surface-container-highest rounded-lg px-3 py-1.5 w-40 text-xs text-on-surface-variant border-none outline-none focus:ring-1 focus:ring-primary/40"
+              className="bg-surface-container-highest rounded-lg px-3 py-1.5 w-40 text-xs text-on-surface border-none outline-none focus:ring-1 focus:ring-primary/40"
             />
+            {labelFilter && (
+              <button
+                onClick={() => setLabelFilter('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface material-symbols-outlined leading-none"
+                style={{ fontSize: '14px' }}
+              >
+                close
+              </button>
+            )}
           </div>
 
           {/* Manual refresh */}
@@ -490,6 +518,7 @@ const RunnersView = () => {
               key={orgName}
               orgName={orgName}
               runners={orgRunners}
+              onLabelClick={handleLabelClick}
             />
           ))
         )}
