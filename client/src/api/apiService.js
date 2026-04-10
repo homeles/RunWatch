@@ -255,7 +255,29 @@ const apiService = {
       console.error('Error fetching database status:', error);
       throw error;
     }
-  }
+  },
+
+  // Get all self-hosted runners with optional filters
+  getRunners: async (filters = {}) => {
+    try {
+      const response = await api.get(`${API_URL}/runners`, { params: filters });
+      return response.data.data || { runners: [], summary: {} };
+    } catch (error) {
+      console.error('Error fetching runners:', error);
+      throw error;
+    }
+  },
+
+  // Get a specific runner by ID
+  getRunnerById: async (id) => {
+    try {
+      const response = await api.get(`${API_URL}/runners/${encodeURIComponent(String(id))}`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching runner:', sanitizeLog(id), error);
+      throw error;
+    }
+  },
 };
 
 export default apiService;

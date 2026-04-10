@@ -2,7 +2,8 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
-  { text: 'Dashboard', icon: 'dashboard', path: '/' },
+  { text: 'Workflows', icon: 'dashboard', path: '/' },
+  { text: 'Runners', icon: 'precision_manufacturing', path: '/runners' },
   { text: 'Statistics', icon: 'analytics', path: '/stats' },
   { text: 'Settings', icon: 'settings', path: '/settings' },
 ];

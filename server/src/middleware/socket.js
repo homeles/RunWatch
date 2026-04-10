@@ -44,6 +44,10 @@ const setupSocket = (server) => {
     // Clients cannot send or receive a 'long-queued-workflow' Socket.IO event, and the
     // server does not emit it via io.emit().
 
+    // runnerStatusUpdate: emitted by the server when self-hosted runner status changes.
+    // Payload: { runners: Array, summary: { total, online, busy, offline } }
+    // Clients (RunnersView) can listen with: socket.on('runnerStatusUpdate', handler)
+
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.id);
     });
