@@ -289,6 +289,17 @@ const apiService = {
       throw error;
     }
   },
+
+  // Force invalidate the runner cache on the server
+  invalidateRunnerCache: async () => {
+    try {
+      const response = await api.post(`${API_URL}/runners/cache/invalidate`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Error invalidating runner cache:', error);
+      throw error;
+    }
+  },
 };
 
 export default apiService;

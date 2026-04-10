@@ -134,11 +134,22 @@ export const listRunners = async (req, res) => {
       offline: runners.filter((r) => r.status === 'offline').length,
     };
 
-    return successResponse(res, { runners, summary }, 'Runners fetched successfully');
+    const cacheInfo = runnerService.getCacheInfo();
+
+    return successResponse(res, { runners, summary, cache: cacheInfo }, 'Runners fetched successfully');
   } catch (error) {
     console.error('runnerController.listRunners error:', error);
     return errorResponse(res, 'Failed to fetch runners', 500, error);
   }
+};
+
+/**
+ * POST /runners/cache/invalidate
+ * Force-clear the runner cache so the next GET /runners fetches fresh data.
+ */
+export const invalidateCache = async (req, res) => {
+  runnerService.invalidateCache();
+  return successResponse(res, { invalidated: true }, 'Runner cache invalidated');
 };
 
 /**

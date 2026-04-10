@@ -61,6 +61,7 @@ router.post('/database/restore', workflowController.requireAdminToken, restoreJs
 
 // Self-hosted runners
 router.get('/runners/status', runnerController.checkRunnersStatus);
+router.post('/runners/cache/invalidate', runnerController.invalidateCache);
 router.get('/runners', runnerController.listRunners);
 router.get('/runners/:runnerId', runnerController.getRunner);
 

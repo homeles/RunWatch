@@ -278,7 +278,8 @@ const RunnersView = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [labelFilter, setLabelFilter] = useState('');
   const [runnersAvailable, setRunnersAvailable] = useState(null); // null = checking
-  const [lastUpdated, setLastUpdated] = useState(null);
+  const [cacheInfo, setCacheInfo] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const intervalRef = useRef(null);
 
   const fetchRunners = async (showLoading = false) => {
@@ -290,14 +291,25 @@ const RunnersView = () => {
       const data = await apiService.getRunners(filters);
       setRunners(data.runners ?? []);
       setSummary(data.summary ?? { total: 0, online: 0, busy: 0, offline: 0 });
+      setCacheInfo(data.cache ?? null);
       setError(null);
-      setLastUpdated(new Date());
     } catch (err) {
       setError('Failed to fetch runners. Please try again.');
       console.error(err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleForceRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await apiService.invalidateRunnerCache();
+    } catch (err) {
+      console.error('Failed to invalidate cache:', err);
+    }
+    await fetchRunners(false);
   };
 
   // Permission check on mount
@@ -482,15 +494,29 @@ const RunnersView = () => {
             )}
           </div>
 
-          {/* Manual refresh */}
-          <button
-            onClick={() => { fetchRunners(true); }}
-            title="Refresh"
-            className="p-1.5 text-on-surface-variant hover:text-primary material-symbols-outlined transition-colors leading-none"
-            style={{ fontSize: '18px' }}
-          >
-            refresh
-          </button>
+          {/* Cache info + refresh */}
+          <div className="flex items-center gap-2">
+            {cacheInfo && cacheInfo.cachedAt && (
+              <span className="text-[10px] text-on-surface-variant/40" title={`Cache TTL: ${Math.round(cacheInfo.ttlMs / 1000)}s`}>
+                {cacheInfo.ageMs != null
+                  ? `Cached ${Math.round(cacheInfo.ageMs / 1000)}s ago`
+                  : 'Fresh'}
+              </span>
+            )}
+            <button
+              onClick={handleForceRefresh}
+              disabled={refreshing}
+              title="Force refresh (bypass cache)"
+              className={`p-1.5 material-symbols-outlined transition-colors leading-none ${
+                refreshing
+                  ? 'text-primary animate-spin'
+                  : 'text-on-surface-variant hover:text-primary'
+              }`}
+              style={{ fontSize: '18px' }}
+            >
+              refresh
+            </button>
+          </div>
         </div>
       </div>
 

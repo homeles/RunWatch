@@ -188,6 +188,16 @@ export const invalidateCache = () => {
 };
 
 /**
+ * Get cache metadata (TTL, age, whether valid).
+ */
+export const getCacheInfo = () => ({
+  ttlMs: cache.TTL_MS,
+  cachedAt: cache.fetchedAt ? new Date(cache.fetchedAt).toISOString() : null,
+  ageMs: cache.fetchedAt ? Date.now() - cache.fetchedAt : null,
+  valid: isCacheValid(),
+});
+
+/**
  * Enrich runners with active workflow/job info from the RunWatch database.
  * For busy runners, find the in-progress workflow run whose jobs match the runner name.
  */
