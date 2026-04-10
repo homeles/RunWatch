@@ -7,6 +7,7 @@ import RepositoryStats from './features/stats/RepositoryStats';
 import WorkflowHistory from './features/workflows/WorkflowHistory';
 import RepositoryView from './features/repository/RepositoryView';
 import Settings from './features/settings/Settings';
+import RunnersView from './features/runners/RunnersView';
 import { AdminTokenProvider } from './common/context/AdminTokenContext';
 import DemoBanner from './common/components/DemoBanner';
 import './App.css';
@@ -25,6 +26,7 @@ function App() {
             <Route path="/workflow/:id" element={<WorkflowDetails />} />
             <Route path="/workflow-history/:repoName/:workflowName" element={<WorkflowHistory />} />
             <Route path="/repository/:repoName" element={<RepositoryView />} />
+            <Route path="/runners" element={<RunnersView />} />
             <Route path="/stats" element={<RepositoryStats />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>

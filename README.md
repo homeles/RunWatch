@@ -12,6 +12,7 @@ RunWatch is a real-time monitoring application for GitHub Actions workflows. It 
 - 📊 Dashboard displaying current and historical workflow runs
 - 🔍 Detailed view of individual workflow runs and jobs
 - 📈 Statistics and analytics on workflow performance
+- 🤖 **Self-hosted runners monitoring** — view runner status, OS, labels, runner groups across all installations
 - 🔔 WebSocket-based real-time updates
 - 🔒 Security hardened: rate limiting, CORS allowlist, helmet headers, MongoDB auth, admin token protection
 
@@ -109,9 +110,14 @@ The application is structured as follows:
 
 5. Set up your GitHub App:
    - Create a GitHub App in your organization's settings
-   - Define the below permissions for the App:
-     - `Read` access to actions, metadata, and organization administration
-     - `Read and write` access to workflows
+   - Define the below **Repository permissions** for the App:
+     - `Read` access to **Actions**
+     - `Read` access to **Administration** _(required for repo-level self-hosted runners)_
+     - `Read` access to **Metadata**
+     - `Read and write` access to **Workflows** _(reserved for future use)_
+   - Define the below **Organization permissions** for the App:
+     - `Read` access to **Administration** _(required for org-level data)_
+     - `Read` access to **Self-hosted runners** _(required for the Runners view)_
    - Subscribe to the below events:
      - `Workflow Job`
      - `Workflow Run`
@@ -119,6 +125,12 @@ The application is structured as follows:
    - Generate and download the private key
    - Place the private key file in your project directory
    - Update the `GITHUB_APP_ID` and `GITHUB_APP_PRIVATE_KEY_PATH` in your `.env` file
+
+   > **Upgrading?** If you already have a GitHub App configured for RunWatch, go to your App's settings → Permissions & events:
+   > - **Organization permissions** → add **Self-hosted runners: Read**
+   > - **Repository permissions** → add **Administration: Read** _(needed for repo-level runners)_
+   >
+   > Then visit each installation and approve the new permission request.
 
 ### Backend Setup
 
@@ -315,6 +327,7 @@ The Docker setup includes:
 - Authentication and multi-user support
 - More advanced filtering and search capabilities
 - Custom notifications for workflow failures
+- ARC / Kubernetes Scale Set integration for runner monitoring
 - Integration with other CI/CD platforms
 
 ## License
