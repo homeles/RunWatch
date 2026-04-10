@@ -42,19 +42,46 @@ export const getAllRunners = async () => {
     // Org-level runners
     if (account.type === 'Organization') {
       try {
-        // Fetch runner groups first to map group IDs to names
+        // Strategy: fetch runner groups, then fetch runners per group.
+        // This gives us accurate group names without relying on runner_group_id
+        // in the runner object (which some Octokit/API versions may not return).
         const groupMap = await fetchRunnerGroupMap(client, account.login);
 
-        const { data } = await client.rest.actions.listSelfHostedRunnersForOrg({
-          org: account.login,
-          per_page: 100,
-        });
-        for (const runner of data.runners) {
-          runners.push(normalizeRunner(runner, {
-            scope: 'org',
-            owner: account.login,
-            groupMap,
-          }));
+        if (groupMap.size > 0) {
+          // Fetch runners per group for accurate group assignment
+          for (const [groupId, groupName] of groupMap) {
+            try {
+              const { data } = await client.rest.actions.listSelfHostedRunnersInGroupForOrg({
+                org: account.login,
+                runner_group_id: groupId,
+                per_page: 100,
+              });
+              for (const runner of data.runners) {
+                runners.push(normalizeRunner(runner, {
+                  scope: 'org',
+                  owner: account.login,
+                  groupName,
+                }));
+              }
+            } catch (err) {
+              console.error(
+                `runnerService: failed to list runners for group ${groupName} (${groupId}) in ${account.login}:`,
+                err.message
+              );
+            }
+          }
+        } else {
+          // Fallback: fetch all runners if group fetch failed
+          const { data } = await client.rest.actions.listSelfHostedRunnersForOrg({
+            org: account.login,
+            per_page: 100,
+          });
+          for (const runner of data.runners) {
+            runners.push(normalizeRunner(runner, {
+              scope: 'org',
+              owner: account.login,
+            }));
+          }
         }
       } catch (err) {
         console.error(
@@ -173,10 +200,12 @@ const fetchRunnerGroupMap = async (client, org) => {
  * Normalise a raw GitHub runner object into the shape our API returns.
  */
 const normalizeRunner = (runner, context) => {
-  // Resolve runner group name: use the groupMap (from org-level fetch) if available,
-  // fall back to runner_group_name if the API ever includes it.
-  let groupName = null;
-  if (context.groupMap && runner.runner_group_id) {
+  // Group name priority:
+  // 1. Explicit groupName from context (from per-group fetch)
+  // 2. Lookup via groupMap + runner_group_id (legacy path)
+  // 3. runner_group_name if API returns it directly
+  let groupName = context.groupName ?? null;
+  if (!groupName && context.groupMap && runner.runner_group_id) {
     groupName = context.groupMap.get(runner.runner_group_id) ?? null;
   }
   if (!groupName && runner.runner_group_name) {
