@@ -37,115 +37,62 @@ const RunnerCard = ({ runner, onLabelClick, onStatusClick }) => {
   const meta = statusMeta(runner.status);
 
   return (
-    <div className="bg-surface-container rounded-xl border border-outline-variant/10 p-4 flex flex-col gap-3 hover:bg-surface-container-high transition-all">
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span
-            className="material-symbols-outlined text-on-surface-variant flex-shrink-0"
-            style={{ fontSize: '18px' }}
-          >
-            {osIcon(runner.os)}
-          </span>
-          <span className="font-semibold text-sm text-on-surface truncate" title={runner.name}>
-            {runner.name}
-          </span>
-        </div>
-        <button
-          onClick={() => onStatusClick && onStatusClick(runner.status)}
-          className="flex items-center gap-1.5 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-          title={`Filter by ${meta.label}`}
-        >
-          <span className={`w-2 h-2 rounded-full ${meta.dot}`} />
-          <span className={`text-xs font-semibold ${meta.text}`}>{meta.label}</span>
-        </button>
-      </div>
+    <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-surface-container-high transition-all group">
+      {/* OS icon */}
+      <span
+        className="material-symbols-outlined text-on-surface-variant flex-shrink-0"
+        style={{ fontSize: '16px' }}
+      >
+        {osIcon(runner.os)}
+      </span>
 
-      {/* Scope */}
-      <div className="flex items-center gap-1.5 text-[11px] text-outline">
-        <span
-          className="material-symbols-outlined leading-none"
-          style={{ fontSize: '13px' }}
-        >
-          {runner.scope === 'org' ? 'corporate_fare' : 'source'}
-        </span>
-        <span className="truncate">
-          {runner.scope === 'org' ? runner.owner : `${runner.owner}/${runner.repo}`}
-        </span>
-      </div>
+      {/* Name */}
+      <span className="font-semibold text-xs text-on-surface truncate min-w-[120px] max-w-[180px]" title={runner.name}>
+        {runner.name}
+      </span>
 
-      {/* Runner group */}
-      {runner.runnerGroup && (
-        <div className="flex items-center gap-1.5 text-[11px] text-outline">
-          <span
-            className="material-symbols-outlined leading-none"
-            style={{ fontSize: '13px' }}
-          >
-            group_work
-          </span>
-          <span className="truncate">{runner.runnerGroup}</span>
-        </div>
-      )}
+      {/* Status */}
+      <button
+        onClick={() => onStatusClick && onStatusClick(runner.status)}
+        className="flex items-center gap-1.5 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity min-w-[52px]"
+        title={`Filter by ${meta.label}`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+        <span className={`text-[10px] font-semibold ${meta.text}`}>{meta.label}</span>
+      </button>
 
-      {/* Active job (when busy) */}
+      {/* Active job (compact) */}
       {runner.status === 'busy' && runner.activeJob && (
-        <div className="flex flex-col gap-1.5 bg-primary/5 border border-primary/10 rounded-lg px-3 py-2">
-          <div className="flex items-center gap-1.5 text-[11px] text-primary/80">
-            <span
-              className="material-symbols-outlined leading-none"
-              style={{ fontSize: '13px' }}
-            >
-              play_circle
-            </span>
-            <span className="font-semibold truncate">{runner.activeJob.workflowName || 'Workflow'}</span>
-            {runner.activeJob.jobName && (
-              <span className="text-primary/50 truncate">/ {runner.activeJob.jobName}</span>
-            )}
-          </div>
-          {runner.activeJob.repository && (
-            <div className="text-[10px] text-primary/50 truncate ml-[21px]">{runner.activeJob.repository}</div>
+        <div className="flex items-center gap-1.5 text-[10px] text-primary/70 truncate min-w-0">
+          <span className="material-symbols-outlined leading-none flex-shrink-0" style={{ fontSize: '11px' }}>play_circle</span>
+          <span className="truncate">{runner.activeJob.workflowName || 'Workflow'}{runner.activeJob.jobName ? ` / ${runner.activeJob.jobName}` : ''}</span>
+          {runner.activeJob.workflowRunId && (
+            <a href={`/workflow/${runner.activeJob.workflowRunId}`} className="text-primary hover:underline flex-shrink-0" title="View in RunWatch">↗</a>
           )}
-          <div className="flex items-center gap-2 ml-[21px]">
-            {runner.activeJob.workflowRunId && (
-              <a
-                href={`/workflow/${runner.activeJob.workflowRunId}`}
-                className="text-[10px] font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
-                title="View in RunWatch"
-              >
-                RunWatch →
-              </a>
-            )}
-            {runner.activeJob.workflowRunUrl && (
-              <a
-                href={runner.activeJob.workflowRunUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[10px] font-medium text-primary/60 hover:text-primary/80 hover:underline transition-colors flex items-center gap-0.5"
-                title="View on GitHub"
-              >
-                GitHub
-                <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>open_in_new</span>
-              </a>
-            )}
-          </div>
+          {runner.activeJob.workflowRunUrl && (
+            <a href={runner.activeJob.workflowRunUrl} target="_blank" rel="noopener noreferrer" className="text-primary/50 hover:text-primary/80 flex-shrink-0" title="View on GitHub">
+              <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>open_in_new</span>
+            </a>
+          )}
         </div>
       )}
 
       {/* Labels */}
-      {runner.labels.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {runner.labels.map((label) => (
-            <button
-              key={label}
-              onClick={() => onLabelClick && onLabelClick(label)}
-              className="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-medium text-primary/80 hover:bg-primary/20 hover:text-primary transition-colors cursor-pointer"
-              title={`Filter by "${label}"`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="flex items-center gap-1 ml-auto flex-shrink-0">
+        {runner.labels.slice(0, 4).map((label) => (
+          <button
+            key={label}
+            onClick={() => onLabelClick && onLabelClick(label)}
+            className="px-1.5 py-0 rounded-full bg-primary/10 border border-primary/20 text-[9px] font-medium text-primary/70 hover:bg-primary/20 hover:text-primary transition-colors cursor-pointer leading-relaxed"
+            title={`Filter by "${label}"`}
+          >
+            {label}
+          </button>
+        ))}
+        {runner.labels.length > 4 && (
+          <span className="text-[9px] text-outline" title={runner.labels.slice(4).join(', ')}>+{runner.labels.length - 4}</span>
+        )}
+      </div>
     </div>
   );
 };
@@ -176,7 +123,7 @@ const RunnerGroup = ({ groupName, runners, onLabelClick, onStatusClick }) => {
       </button>
 
       {!collapsed && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div className="flex flex-col">
           {runners.map((runner) => (
             <RunnerCard key={runner.id} runner={runner} onLabelClick={onLabelClick} onStatusClick={onStatusClick} />
           ))}
