@@ -51,7 +51,7 @@ export const getAllRunners = async () => {
           // Fetch runners per group for accurate group assignment
           for (const [groupId, groupName] of groupMap) {
             try {
-              const { data } = await client.rest.actions.listSelfHostedRunnersInGroupForOrg({
+              const { data } = await client.request('GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners', {
                 org: account.login,
                 runner_group_id: groupId,
                 per_page: 100,
@@ -178,20 +178,23 @@ export const invalidateCache = () => {
 
 /**
  * Fetch org-level runner groups and return a Map of groupId → groupName.
- * Gracefully returns an empty map if the API call fails (e.g. missing permission).
+ * Uses a raw API request to avoid Octokit version issues with the
+ * listSelfHostedRunnerGroupsForOrg convenience method.
+ * Gracefully returns an empty map if the API call fails.
  */
 const fetchRunnerGroupMap = async (client, org) => {
   const map = new Map();
   try {
-    const { data } = await client.rest.actions.listSelfHostedRunnerGroupsForOrg({
+    const { data } = await client.request('GET /orgs/{org}/actions/runner-groups', {
       org,
       per_page: 100,
     });
     for (const group of data.runner_groups) {
       map.set(group.id, group.name);
     }
+    console.log(`runnerService: fetched ${map.size} runner groups for ${org}`);
   } catch (err) {
-    console.error(`runnerService: failed to fetch runner groups for ${org}:`, err.message);
+    console.error(`runnerService: failed to fetch runner groups for ${org}: status=${err.status}, message=${err.message}`);
   }
   return map;
 };
