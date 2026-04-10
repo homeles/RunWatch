@@ -2,7 +2,9 @@
 
 RunWatch is a real-time monitoring application for GitHub Actions workflows. It provides an interactive dashboard to track GitHub Action runs, including their status, execution time, and performance trends.
 
-![Dashboard - 5-Column Grid & Collapsible Workflows](./docs/images/01-dashboard-5col.png)
+![Workflows View](./docs/images/01-workflows-view.png)
+
+![Runners View](./docs/images/10-runners-view.png)
 
 ![Repository Detail](./docs/images/03-repo-detail.png)
 
