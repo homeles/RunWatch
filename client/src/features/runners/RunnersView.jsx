@@ -53,7 +53,8 @@ const RunnerCard = ({ runner, onLabelClick, onStatusClick }) => {
         </span>
         {runner.scope === 'repo' && runner.repo && (
           <span className="flex-shrink-0 flex items-center gap-1.5 px-1.5 py-0 rounded bg-tertiary/15 border border-tertiary/20 text-[9px] font-medium text-tertiary/80">
-            <span className="material-symbols-outlined leading-none" style={{ fontSize: '10px' }}>source</span>
+            <span className="font-bold uppercase tracking-wider">repo</span>
+            <span className="text-tertiary/40">-</span>
             <a
               href={`/repository/${runner.owner}/${runner.repo}`}
               className="hover:text-tertiary hover:underline transition-colors"
