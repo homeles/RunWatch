@@ -665,10 +665,15 @@ export const getJobMetrics = async () => {
     // console.log('Total active jobs:', totalActive);
     
     // Get all jobs grouped by organization
+    // Only count jobs from workflow runs that are still active — completed/cancelled
+    // workflows should not contribute to active job counts even if individual job
+    // status wasn't updated (e.g. missed webhook events).
     const jobsByOrg = await WorkflowRun.aggregate([
       {
         $match: {
-          'jobs': { $exists: true, $not: { $size: 0 } }
+          'jobs': { $exists: true, $not: { $size: 0 } },
+          'run.status': { $in: ['in_progress', 'queued', 'waiting', 'pending', 'requested'] },
+          'run.conclusion': null
         }
       },
       {
