@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import apiService from '../../api/apiService';
+import { socket } from '../../api/socketService';
 
 const staticNavItems = [
   { text: 'Workflows', icon: 'dashboard', path: '/' },
@@ -13,11 +14,25 @@ const RUNNERS_TOOLTIP =
 
 const Layout = ({ children }) => {
   const [runnersAvailable, setRunnersAvailable] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(socket.connected);
 
   useEffect(() => {
     apiService.getRunnersStatus().then((status) => {
       setRunnersAvailable(status.available === true);
     });
+  }, []);
+
+  useEffect(() => {
+    const onConnect = () => setSocketConnected(true);
+    const onDisconnect = () => setSocketConnected(false);
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+    };
   }, []);
 
   return (
@@ -111,17 +126,16 @@ const Layout = ({ children }) => {
       </aside>
 
       {/* Top Header */}
-      <header className="fixed top-0 right-0 left-[240px] h-16 bg-[#10141a]/80 backdrop-blur-xl flex items-center justify-between px-8 z-50 text-sm font-medium tracking-normal">
-        <div className="flex items-center gap-6">
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="p-2 text-[#dfe2eb]/60 hover:text-primary transition-colors">
-            <span className="material-symbols-outlined">refresh</span>
-          </button>
-          <div className="flex items-center gap-1">
-            <button className="p-1.5 text-[#dfe2eb]/60 hover:text-primary material-symbols-outlined">chevron_left</button>
-            <button className="p-1.5 text-[#dfe2eb]/60 hover:text-primary material-symbols-outlined">chevron_right</button>
-          </div>
+      <header className="fixed top-0 right-0 left-[240px] h-16 bg-[#10141a]/80 backdrop-blur-xl flex items-center justify-end px-8 z-50 text-sm font-medium tracking-normal">
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-block w-2 h-2 rounded-full ${
+              socketConnected ? 'bg-green-500' : 'bg-red-500 animate-pulse'
+            }`}
+          />
+          <span className="text-xs text-[#dfe2eb]/50">
+            {socketConnected ? 'Live' : 'Disconnected'}
+          </span>
         </div>
       </header>
 
