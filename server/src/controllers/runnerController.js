@@ -171,7 +171,8 @@ export const getRunner = async (req, res) => {
 
     return successResponse(res, runner, 'Runner fetched successfully');
   } catch (error) {
-    console.error(`runnerController.getRunner error: ${sanitizeLog(req.params?.runnerId)}`, error);
+    const safeRunnerId = Number(req.params?.runnerId);
+    console.error('runnerController.getRunner error:', Number.isFinite(safeRunnerId) ? safeRunnerId : '[invalid]', error);
     return errorResponse(res, 'Failed to fetch runner', 500, error);
   }
 };
