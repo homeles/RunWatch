@@ -81,7 +81,7 @@ export const getAllWorkflowRuns = async (req, res) => {
     if (searchQuery) {
       // Escape regex special characters to prevent ReDoS
       const escaped = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      query['repository.fullName'] = { $regex: escaped, $options: 'i' };
+      query['repository.fullName'] = new RegExp(escaped, 'i');
     }
 
     // Add status filter

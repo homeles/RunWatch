@@ -104,13 +104,13 @@ app.post('/api/webhooks/github', async (req, res) => {
   const name = req.headers['x-github-event'];
   const contentType = req.headers['content-type'];
 
-  // Sanitize header values before logging to prevent log injection via CRLF.
-  const sanitize = (v) => (v == null ? '' : String(v).replace(/[\r\n\t\x00-\x1F\x7F]/g, ' '));
+  const KNOWN_EVENTS = new Set(['workflow_run', 'workflow_job', 'check_run', 'check_suite', 'push', 'pull_request', 'installation', 'ping']);
+  const safeEventName = KNOWN_EVENTS.has(name) ? name : 'unknown_event';
 
   console.log('Received webhook POST request from GitHub');
-  console.log('Event: %s', sanitize(name));
-  console.log('Delivery ID: %s', sanitize(id));
-  console.log('Content-Type: %s', sanitize(contentType));
+  console.log('Event:', safeEventName);
+  console.log('Delivery ID:', id ? '[present]' : '[missing]');
+  console.log('Content-Type:', contentType === 'application/json' ? 'application/json' : 'other');
   console.log('Signature present:', Boolean(signature));
 
   if (!signature || !id || !name) {
