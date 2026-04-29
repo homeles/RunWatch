@@ -43,6 +43,14 @@
       "last 1 safari version"
     ]
   },
+  "overrides": {
+    "lodash": ">=4.18.0",
+    "path-to-regexp": ">=0.1.13",
+    "node-forge": ">=1.4.0",
+    "picomatch": ">=2.3.2",
+    "underscore": ">=1.13.8",
+    "serialize-javascript": ">=7.0.3"
+  },
   "devDependencies": {
     "@craco/craco": "^7.1.0",
     "@types/chart.js": "^2.9.41",

@@ -52,7 +52,7 @@ export const syncGitHubData = async (installationId, socket, options = { maxWork
         throw new Error('Installation ID is required for synchronization');
     }
 
-    console.log('Starting sync for installation ID: %s', sanitizeLog(installationId));
+    console.log(`Starting sync for installation ID: ${sanitizeLog(installationId)}`);
     let syncRecord;
     
     try {

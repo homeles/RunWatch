@@ -108,9 +108,9 @@ app.post('/api/webhooks/github', async (req, res) => {
   const sanitize = (v) => (v == null ? '' : String(v).replace(/[\r\n\t\x00-\x1F\x7F]/g, ' '));
 
   console.log('Received webhook POST request from GitHub');
-  console.log('Event: %s', sanitize(name));
-  console.log('Delivery ID: %s', sanitize(id));
-  console.log('Content-Type: %s', sanitize(contentType));
+  console.log(`Event: ${sanitize(name)}`);
+  console.log(`Delivery ID: ${sanitize(id)}`);
+  console.log(`Content-Type: ${sanitize(contentType)}`);
   console.log('Signature present:', Boolean(signature));
 
   if (!signature || !id || !name) {
