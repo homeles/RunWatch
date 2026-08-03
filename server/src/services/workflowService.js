@@ -733,3 +733,51 @@ export const getJobMetrics = async () => {
     throw error;
   }
 };
+
+/**
+ * Sync all stale workflow runs — runs stuck in "in_progress" or "queued" that
+ * likely missed their webhook update. Fetches current status from GitHub and
+ * updates the local DB.
+ *
+ * @param {object} options
+ * @param {number} [options.staleMinutes=60] - Consider runs stale after this many minutes
+ * @param {number} [options.limit=50] - Max runs to sync per call
+ * @returns {Promise<{synced: number, failed: number, results: Array}>}
+ */
+export const syncStaleWorkflowRuns = async ({ staleMinutes = 60, limit = 50 } = {}) => {
+  const cutoff = new Date(Date.now() - staleMinutes * 60 * 1000);
+
+  // Find runs that are still active but haven't been updated since the cutoff
+  const staleRuns = await WorkflowRun.find({
+    'run.status': { $in: ['in_progress', 'queued'] },
+    'run.updated_at': { $lt: cutoff }
+  })
+    .sort({ 'run.updated_at': 1 })
+    .limit(limit)
+    .select('run.id repository.fullName run.status run.updated_at');
+
+  if (staleRuns.length === 0) {
+    return { synced: 0, failed: 0, results: [] };
+  }
+
+  console.log(`[syncStale] Found ${staleRuns.length} stale workflow runs (older than ${staleMinutes}min)`);
+
+  const results = [];
+  let synced = 0;
+  let failed = 0;
+
+  for (const run of staleRuns) {
+    const runId = run.run.id;
+    try {
+      const updated = await syncWorkflowRun(runId);
+      results.push({ runId, status: 'synced', newStatus: updated?.run?.status || 'unknown' });
+      synced++;
+    } catch (error) {
+      results.push({ runId, status: 'failed', error: error.message });
+      failed++;
+    }
+  }
+
+  console.log(`[syncStale] Done: ${synced} synced, ${failed} failed`);
+  return { synced, failed, results };
+};

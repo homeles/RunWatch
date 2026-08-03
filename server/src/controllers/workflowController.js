@@ -300,6 +300,24 @@ export const syncWorkflowRun = async (req, res) => {
   }
 };
 
+export const syncStaleWorkflowRuns = async (req, res) => {
+  try {
+    const staleMinutes = parseInt(req.query.staleMinutes) || 60;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+
+    const result = await workflowService.syncStaleWorkflowRuns({ staleMinutes, limit });
+
+    // Emit updates for successfully synced runs
+    if (req.io && result.synced > 0) {
+      req.io.emit('workflowBulkUpdate', { synced: result.synced });
+    }
+
+    return successResponse(res, result);
+  } catch (error) {
+    return errorResponse(res, 'Error syncing stale workflow runs', 500, error);
+  }
+};
+
 export const syncRepositoryWorkflowRuns = async (req, res) => {
   try {
     const repoPath = req.params[0];
