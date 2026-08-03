@@ -23,3 +23,5 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: always
           deny-licenses: GPL-3.0, AGPL-3.0
+          # GHSA-qwww-vcr4-c8h2: react-router RSC Mode CSRF — only affects RSC mode, not used in this project
+          allow-ghsas: GHSA-qwww-vcr4-c8h2
