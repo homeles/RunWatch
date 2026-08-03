@@ -104,6 +104,17 @@ const apiService = {
     }
   },
 
+  // Sync all stale workflow runs (stuck in_progress/queued)
+  syncStaleWorkflowRuns: async (staleMinutes = 60) => {
+    try {
+      const response = await api.post(`${API_URL}/workflow-runs/sync-stale?staleMinutes=${staleMinutes}`);
+      return response.data.data;
+    } catch (error) {
+      console.error("Error syncing stale workflow runs:", error);
+      throw error;
+    }
+  },
+
   // Get workflow statistics
   getWorkflowStats: async () => {
     try {

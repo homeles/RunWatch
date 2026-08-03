@@ -385,6 +385,20 @@ const Dashboard = () => {
     setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
+  const handleSyncStale = async () => {
+    try {
+      const result = await apiService.syncStaleWorkflowRuns();
+      if (result.synced === 0 && result.failed === 0) {
+        window.alert('No stale workflow runs found.');
+      } else {
+        window.alert(`Synced ${result.synced} stale run(s)${result.failed ? `, ${result.failed} failed` : ''}.`);
+        fetchWorkflowRuns();
+      }
+    } catch (error) {
+      window.alert('Failed to sync stale runs: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
   // Metrics fetching
   const fetchMetrics = async () => {
     try {
@@ -598,6 +612,15 @@ const Dashboard = () => {
             style={{ fontSize: '18px' }}
           >
             refresh
+          </button>
+
+          <button
+            onClick={handleSyncStale}
+            title="Sync stale runs (refresh stuck in-progress workflows)"
+            className="p-1.5 text-on-surface-variant hover:text-amber-400 material-symbols-outlined transition-colors leading-none"
+            style={{ fontSize: '18px' }}
+          >
+            sync_problem
           </button>
         </div>
       </div>

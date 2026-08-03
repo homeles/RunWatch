@@ -43,6 +43,9 @@ router.get('/workflow-runs/:id', workflowController.getWorkflowRunById);
 // Delete a workflow run by ID
 router.delete('/workflow-runs/:id', workflowController.deleteWorkflowRun);
 
+// Sync all stale workflow runs (stuck in_progress/queued)
+router.post('/workflow-runs/sync-stale', workflowController.syncStaleWorkflowRuns);
+
 // Sync workflow run
 router.post('/workflow-runs/:id/sync', workflowController.syncWorkflowRun);
 
