@@ -3,20 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.2.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^13.5.0",
-    "axios": "^1.8.1",
-    "chart.js": "^4.4.8",
-    "date-fns": "^4.1.0",
-    "react": "^19.0.0",
-    "react-chartjs-2": "^5.3.0",
-    "react-dom": "^19.0.0",
-    "react-router-dom": "^7.2.0",
+    "axios": "^1.21.1",
+    "chart.js": "^4.6.2",
+    "date-fns": "^4.4.0",
+    "react": "^19.3.1",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.7",
     "react-scripts": "5.0.1",
-    "react-toastify": "^11.0.5",
-    "socket.io-client": "^4.8.1",
+    "react-toastify": "^11.2.0",
+    "socket.io-client": "^4.8.4",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -49,20 +49,19 @@
     "node-forge": ">=1.4.0",
     "picomatch": ">=2.3.2",
     "underscore": ">=1.13.8",
-    "serialize-javascript": ">=7.0.3"
+    "serialize-javascript": ">=7.0.3",
+    "nth-check": "^2.1.1"
   },
   "devDependencies": {
     "@craco/craco": "^7.1.0",
-    "@types/chart.js": "^2.9.41",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.13.5",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
-    "@types/socket.io-client": "^1.4.36",
-    "autoprefixer": "^10.4.27",
-    "concurrently": "^9.1.2",
-    "postcss": "^8.5.8",
+    "@types/node": "^22.20.7",
+    "@types/react": "^19.3.3",
+    "@types/react-dom": "^19.3.0",
+    "autoprefixer": "^10.7.0",
+    "concurrently": "^9.2.5",
+    "postcss": "^8.5.33",
     "tailwindcss": "^3.4.19",
-    "typescript": "^5.7.3"
+    "typescript": "^5.9.3"
   }
 }

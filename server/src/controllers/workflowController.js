@@ -67,13 +67,18 @@ export const getAllWorkflowRuns = async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 30));
     const searchQuery = req.query.search ? String(req.query.search).slice(0, 100) : '';
-    const status = req.query.status || 'all';
+    const requestedStatus = req.query.status || 'all';
     const skip = (page - 1) * pageSize;
 
-    // Validate status against known values to prevent unexpected query behavior
+    // Validate status against known values to prevent unexpected query behavior.
+    // Use the allowlisted constant (not the raw query value) in the Mongo query so
+    // objects/arrays from qs parsing can never reach the filter (CodeQL js/sql-injection).
     const validStatuses = ['all', 'in_progress', 'queued', 'waiting', 'pending', 'success', 'failure', 'cancelled', 'skipped', 'timed_out', 'action_required', 'stale', 'neutral', 'startup_failure'];
-    if (!validStatuses.includes(status)) {
-      return errorResponse(res, `Invalid status filter: ${status}`, 400);
+    const status = typeof requestedStatus === 'string'
+      ? validStatuses.find((s) => s === requestedStatus)
+      : undefined;
+    if (!status) {
+      return errorResponse(res, 'Invalid status filter', 400);
     }
 
     // Build the query with search and status filters

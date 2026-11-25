@@ -51,7 +51,7 @@ The application is structured as follows:
 
 ### Prerequisites
 
-- Node.js (v18+)
+- Node.js (v22+; v24 LTS recommended)
 - MongoDB
 - GitHub repository with Actions workflows
 - Ability to configure GitHub webhooks
